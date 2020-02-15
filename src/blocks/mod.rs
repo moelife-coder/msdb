@@ -12,9 +12,9 @@ pub enum Cell {
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Cell::Literal(i, j) => write!(f, "[Literal]({}) {}", hex::encode(j), i),
-            Cell::Blob(i, j) => write!(f, "[Blob]({}) {:?}", hex::encode(j), i),
-            Cell::Link(i, j, k) => write!(
+            Self::Literal(i, j) => write!(f, "[Literal]({}) {}", hex::encode(j), i),
+            Self::Blob(i, j) => write!(f, "[Blob]({}) {:?}", hex::encode(j), i),
+            Self::Link(i, j, k) => write!(
                 f,
                 "{}",
                 format!(
@@ -37,7 +37,7 @@ impl std::fmt::Display for Cell {
                     }
                 )
             ),
-            Cell::LiteralIncomplete(i, j) => write!(
+            Self::LiteralIncomplete(i, j) => write!(
                 f,
                 "[LiteralIncomplete]({} - {}{}) {}",
                 hex::encode(j.identifier),
@@ -45,7 +45,7 @@ impl std::fmt::Display for Cell {
                 format!("{}", j.num),
                 hex::encode(i)
             ),
-            Cell::BlobIncomplete(i, j) => write!(
+            Self::BlobIncomplete(i, j) => write!(
                 f,
                 "[BlobIncomplete]({} - {}{}) {}",
                 hex::encode(j.identifier),
@@ -106,7 +106,7 @@ struct CellReadingBuffer {
     content: Vec<u8>,
 }
 impl CellReadingBuffer {
-    fn new() -> Self {
+    const fn new() -> Self {
         Self {
             cell_size: 0,
             cell_opcode: 0,
@@ -117,7 +117,7 @@ impl CellReadingBuffer {
     }
 }
 impl BlockQueue {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             queue: Vec::new(),
             cells: Vec::new(),
@@ -126,7 +126,7 @@ impl BlockQueue {
     pub fn import_from_vec(&mut self, raw_content: Vec<u8>) {
         self.queue.push(raw_content);
     }
-    pub fn into_cell(&mut self, default_cell_size: u32) {
+    pub fn raw_to_cell(&mut self, default_cell_size: u32) {
         let mut pre_translate_result: Vec<CellReadingBuffer> = Vec::new();
         for i in &mut self.queue {
             let mut current_cell = CellReadingBuffer::new();
@@ -155,52 +155,42 @@ impl BlockQueue {
                         }
                     }
                     1..=12 => {
-                        match same_size_as_default {
-                            false => {
-                                //i[1]~i[4] => 大小
-                                //i[5]~i[12] => Identifier
-                                match current_cell.current_byte_offset {
-                                    1..=4 => {
-                                        current_cell.cell_size +=
-                                            i[(current_cell.current_byte_offset + block_offset)
-                                                as usize]
-                                                as u32
-                                                * 256_u32.pow(4 - current_cell.current_byte_offset)
-                                                    as u32;
-                                    }
-                                    5..=12 => {
-                                        current_cell.identifier
-                                            [current_cell.current_byte_offset as usize - 5] = i
-                                            [(current_cell.current_byte_offset + block_offset)
-                                                as usize];
-                                    }
-                                    _ => panic!(
-                                        "Error when loading byte offset for a different size cell"
-                                    ),
+                        if same_size_as_default {
+                            //i[1]~i[4] => 大小
+                            //i[5]~i[12] => Identifier
+                            match current_cell.current_byte_offset {
+                                1..=4 => {
+                                    current_cell.cell_size += u32::from(
+                                        i[(current_cell.current_byte_offset + block_offset)
+                                            as usize],
+                                    ) * 256_u32
+                                        .pow(4 - current_cell.current_byte_offset)
+                                        as u32;
                                 }
+                                5..=12 => {
+                                    current_cell.identifier
+                                        [current_cell.current_byte_offset as usize - 5] = i
+                                        [(current_cell.current_byte_offset + block_offset)
+                                            as usize];
+                                }
+                                _ => panic!(
+                                    "Error when loading byte offset for a different size cell"
+                                ),
                             }
-                            true => {
-                                //i[1]~i[8]  => identifier
-                                match current_cell.current_byte_offset {
-                                    1..=8 => {
-                                        current_cell.cell_size = default_cell_size;
-                                        current_cell.identifier
-                                            [current_cell.current_byte_offset as usize - 1] = i
-                                            [(current_cell.current_byte_offset + block_offset)
-                                                as usize];
-                                    }
-                                    _ => {
-                                        if current_cell.current_byte_offset
-                                            == current_cell.cell_size + 8
-                                        {
-                                            is_ended = true;
-                                        }
-                                        current_cell.content.push(
-                                            i[(current_cell.current_byte_offset + block_offset)
-                                                as usize],
-                                        );
-                                    }
+                        } else {
+                            //i[1]~i[8]  => identifier
+                            if let 1..=8 = current_cell.current_byte_offset {
+                                current_cell.cell_size = default_cell_size;
+                                current_cell.identifier
+                                    [current_cell.current_byte_offset as usize - 1] =
+                                    i[(current_cell.current_byte_offset + block_offset) as usize];
+                            } else {
+                                if current_cell.current_byte_offset == current_cell.cell_size + 8 {
+                                    is_ended = true;
                                 }
+                                current_cell.content.push(
+                                    i[(current_cell.current_byte_offset + block_offset) as usize],
+                                );
                             }
                         }
                     }
@@ -535,7 +525,7 @@ impl BlockQueue {
             }
         }
     }
-    pub fn into_raw(&mut self, vector_length: Option<u32>, default_cell_size: u32) {
+    pub fn cell_to_raw(&mut self, vector_length: Option<u32>, default_cell_size: u32) {
         let mut pre_translate_result: Vec<CellReadingBuffer> = Vec::new();
         let vector_length = if let Some(i) = vector_length {
             i
@@ -550,12 +540,12 @@ impl BlockQueue {
             };
             match &i {
                 Cell::Literal(j, _) => {
-                    current_buffer.cell_size = j.len() as u32;
+                    current_buffer.cell_size = j.len().try_into().unwrap();
                     current_buffer.cell_opcode = 1;
                     current_buffer.content = j.as_bytes().to_vec();
                 }
                 Cell::Blob(j, _) => {
-                    current_buffer.cell_size = j.len() as u32;
+                    current_buffer.cell_size = j.len().try_into().unwrap();
                     current_buffer.cell_opcode = 3;
                     current_buffer.content = j.to_vec();
                 }
@@ -597,11 +587,11 @@ impl BlockQueue {
                         } else {
                             15
                         };
-                        current_buffer.cell_size = j.len() as u32;
+                        current_buffer.cell_size = j.len().try_into().unwrap();
                         current_buffer.content = j.to_vec();
                     } else {
                         current_buffer.cell_opcode = 17;
-                        current_buffer.cell_size = j.len() as u32 + 2;
+                        current_buffer.cell_size = (j.len() + 2).try_into().unwrap();
                         current_buffer.content = vec![k.num, if k.is_final { 1 } else { 0 }];
                         for l in j {
                             current_buffer.content.push(*l);
@@ -628,15 +618,15 @@ impl BlockQueue {
                 //计算大小
                 result_vec.push(first_byte);
                 for j in 0..4 {
-                    result_vec.push((i.cell_size / 256_u32.pow(3 - j)) as u8);
+                    result_vec.push((i.cell_size / 256_u32.pow(3 - j)).try_into().unwrap());
                     i.cell_size -= (i.cell_size / 256_u32.pow(3 - j)) * (256_u32.pow(3 - j));
                 }
             }
-            for j in i.identifier.iter() {
+            for j in &i.identifier {
                 result_vec.push(*j);
             }
             //附上内容
-            for j in i.content.iter() {
+            for j in &i.content {
                 result_vec.push(*j);
             }
         }

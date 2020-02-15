@@ -55,11 +55,9 @@ fn main() {
                         let mut database_directory_ok: bool = false;
                         let mut directory = String::new();
                         while !database_directory_ok {
-                            let p = format!("Database directory:(relative) ");
-                            let readline = rl.readline(&p);
-                            match readline {
-                                Ok(line) => directory = line,
-                                _ => {}
+                            let readline = rl.readline("Database directory:(relative) ");
+                            if let Ok(line) = readline {
+                                directory = line
                             };
                             if !path::Path::new(&directory).is_relative() {
                                 println!("Please enter a relative path");
@@ -108,12 +106,10 @@ fn main() {
                         current_location.select_root(if let Some(i) = parsed_command.next() {
                             i.to_string()
                         } else {
-                            let p = format!("Database directory:");
                             let mut directory = String::new();
-                            let readline = rl.readline(&p);
-                            match readline {
-                                Ok(line) => directory = line,
-                                _ => {}
+                            let readline = rl.readline("Database directory:");
+                            if let Ok(line) = readline {
+                                directory = line;
                             };
                             directory
                         });

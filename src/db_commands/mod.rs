@@ -553,32 +553,35 @@ pub fn run_commands(
                     );
                     let mut structure_metadata = metadata::Metadata::create();
                     structure_metadata.import(structure_list_vec);
-                    let block_queue =
-                        if let Some(_) = structure_metadata.sub_data().get(&String::from("list")) {
-                            //读取cached_block
-                            let block_list_path = format!(
-                                "{}/{}/{}",
-                                current_location.root_folder().unwrap(),
-                                structure_token,
-                                structure_metadata
-                                    .sub_data()
-                                    .get(&String::from("list"))
-                                    .unwrap()
-                            );
-                            let block_list_raw = binary_io::read_with_nonce(&block_list_path);
-                            let block_list_vec = blockencrypt::decrypt_block(
-                                &block_list_raw.0,
-                                password,
-                                block_list_raw.1,
-                            );
-                            let mut final_block_list = blocks::BlockQueue::new();
-                            final_block_list.import_from_vec(block_list_vec);
-                            final_block_list.into_cell(512);
-                            final_block_list
-                        } else {
-                            println!("Warning: no cell list founded. Using new cell list.");
-                            blocks::BlockQueue::new()
-                        };
+                    let block_queue = if structure_metadata
+                        .sub_data()
+                        .get(&String::from("list"))
+                        .is_some()
+                    {
+                        //读取cached_block
+                        let block_list_path = format!(
+                            "{}/{}/{}",
+                            current_location.root_folder().unwrap(),
+                            structure_token,
+                            structure_metadata
+                                .sub_data()
+                                .get(&String::from("list"))
+                                .unwrap()
+                        );
+                        let block_list_raw = binary_io::read_with_nonce(&block_list_path);
+                        let block_list_vec = blockencrypt::decrypt_block(
+                            &block_list_raw.0,
+                            password,
+                            block_list_raw.1,
+                        );
+                        let mut final_block_list = blocks::BlockQueue::new();
+                        final_block_list.import_from_vec(block_list_vec);
+                        final_block_list.raw_to_cell(512);
+                        final_block_list
+                    } else {
+                        println!("Warning: no cell list founded. Using new cell list.");
+                        blocks::BlockQueue::new()
+                    };
                     structure_cache.insert(
                         from_hex_metadata(structure_token),
                         Structure {
@@ -654,7 +657,7 @@ pub fn run_commands(
                 {
                     println!(" Cell List");
                     //TODO: custom cell size
-                    i.1.list.into_raw(None, 512);
+                    i.1.list.cell_to_raw(None, 512);
                     for j in &i.1.list.queue {
                         let data = blockencrypt::encrypt_block(j, password);
                         let filename = format!(
@@ -679,7 +682,7 @@ pub fn run_commands(
                         if !path::Path::new(&folder_name).is_dir() {
                             fs::create_dir(&folder_name).expect("Unable to create cell folder");
                         }
-                        j.1.into_raw(Some(65536), 512);
+                        j.1.cell_to_raw(Some(65536), 512);
                         for (current_num, k) in j.1.queue.iter().enumerate() {
                             let data = blockencrypt::encrypt_block(k, password);
                             let filename = format!("{}/{}", folder_name, current_num);
@@ -745,7 +748,7 @@ pub fn run_commands(
                                     temp_block.import_from_vec(blockencrypt::decrypt_block(
                                         &block.0, password, block.1,
                                     ));
-                                    temp_block.into_cell(512);
+                                    temp_block.raw_to_cell(512);
                                     print!(".");
                                     current_num += 1;
                                 }
@@ -862,10 +865,11 @@ pub fn run_commands(
                         .unwrap()
                 );
             } else if current_location.current_cell_identifier() == None {
-                for (_, i) in &structure_cache
+                for i in structure_cache
                     .get(&current_location.current_structure_identifier().unwrap())
                     .unwrap()
                     .cached_block
+                    .values()
                 {
                     for j in &i.cells {
                         if &current_location.current_object_identifier().unwrap()
