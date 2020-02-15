@@ -53,8 +53,6 @@ pub struct DatabaseLocation {
 impl DatabaseLocation {
     pub const fn new() -> Self {
         Self {
-            //current_structure: ([0; METADATA_INDEX_LEN as usize], String::new(), String::new()),
-            //current_cell: ([0; METADATA_INDEX_LEN as usize], String::new(), String::new()),
             current_structure: None,
             current_object: None,
             current_cell: None,
@@ -103,8 +101,8 @@ impl DatabaseLocation {
         self.current_cell = None;
         self.current_object = None;
     }
-    pub fn root_folder(&self) -> Option<String> {
-        self.root_folder.clone()
+    pub fn root_folder(&self) -> Option<&String> {
+        self.root_folder.as_ref()
     }
     pub fn current_structure_identifier(&self) -> Option<[u8; METADATA_INDEX_LEN as usize]> {
         match self.current_structure {
@@ -112,8 +110,8 @@ impl DatabaseLocation {
             Some((i, _)) => Some(i),
         }
     }
-    pub fn current_structure_pretty_name(&self) -> Option<String> {
-        match self.current_structure.clone() {
+    pub fn current_structure_pretty_name(&self) -> Option<&str> {
+        match self.current_structure.as_ref() {
             None => None,
             Some((_, i)) => Some(i),
         }
@@ -124,8 +122,8 @@ impl DatabaseLocation {
             Some((i, _)) => Some(i),
         }
     }
-    pub fn current_cell_pretty_name(&self) -> Option<String> {
-        match self.current_cell.clone() {
+    pub fn current_cell_pretty_name(&self) -> Option<&str> {
+        match self.current_cell.as_ref() {
             None => None,
             Some((_, i)) => Some(i),
         }
@@ -136,8 +134,8 @@ impl DatabaseLocation {
             Some((i, _)) => Some(i),
         }
     }
-    pub fn current_object_pretty_name(&self) -> Option<String> {
-        match self.current_object.clone() {
+    pub fn current_object_pretty_name(&self) -> Option<&str> {
+        match self.current_object.as_ref() {
             None => None,
             Some((_, i)) => Some(i),
         }
@@ -361,7 +359,7 @@ pub fn run_commands(
                                         k
                                     );
                                     let result = k;
-                                    result.clone()
+                                    result.to_string()
                                 } else {
                                     //创建一个新的Field
                                     let new_field_identifier = {
@@ -399,7 +397,7 @@ pub fn run_commands(
                                     //创建Field
                                     fs::create_dir(format!(
                                         "{}/{}/{}",
-                                        current_location.root_folder.clone().unwrap(),
+                                        current_location.root_folder().unwrap(),
                                         into_hex_metadata(
                                             current_location
                                                 .current_structure_identifier()
