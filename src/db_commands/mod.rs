@@ -200,82 +200,22 @@ pub fn run_commands(
                     println!("You need to have at least one argument for 'new' command");
                 }
                 Some(i) => match i {
-                    "struct" => {
-                        match parsed_command.next() {
-                            None => println!("You need to specify structure name"),
-                            Some(j) => {
-                                if main_metadata.sub_data().get(&j.to_string()).is_some() {
-                                    println!("Structure {} already exists", j);
-                                } else {
-                                    //创建一个Struct
-                                    //生成一个structure_token([u8; METADATA_INDEX_LEN])
-                                    let structure_token = {
-                                        let mut tk = random_metadata_identifier();
-                                        let mut structure_directory = format!(
-                                            "{}/{}",
-                                            current_location.root_folder().unwrap(),
-                                            into_hex_metadata(tk)
-                                        );
-                                        while path::Path::new(&structure_directory).exists() {
-                                            tk = random_metadata_identifier();
-                                            structure_directory = format!(
-                                                "{}/{}",
-                                                current_location.root_folder().unwrap(),
-                                                into_hex_metadata(tk)
-                                            );
-                                        }
-                                        tk
-                                    };
-                                    //创建Struct Directory
-                                    std::fs::create_dir(format!(
-                                        "{}/{}",
-                                        current_location.root_folder().unwrap(),
-                                        into_hex_metadata(structure_token)
-                                    ))
-                                    .expect("Unable to create structure directory");
-                                    //写入main metadata
-                                    main_metadata
-                                        .new_sub_data(j, &into_hex_metadata(structure_token));
-                                    //创建一个structure cache
-                                    {
-                                        let mut structure_data = metadata::Metadata::create();
-                                        structure_data.new_attribute(
-                                            &String::from("type"),
-                                            &String::from("struct"),
-                                        );
-                                        let list_identifier = random_metadata_identifier();
-                                        structure_data.new_sub_data(
-                                            &String::from("list"),
-                                            &into_hex_metadata(list_identifier),
-                                        );
-                                        //封装structure
-                                        let result_struct = Structure {
-                                            metadata: structure_data,
-                                            list: blocks::BlockQueue::new(),
-                                            cached_block: HashMap::new(),
-                                        };
-                                        structure_cache.insert(structure_token, result_struct);
-                                        //{
-                                        //let structure_metadata_filename =format!("{}/{}/metadata", current_location.root_folder().expect("Unable to get root folder for current database"), structure_token);
-                                        //let data = blockencrypt::encrypt_block(structure_data.to_vec(),&password);
-                                        //binary_io::write_with_nonce(&structure_metadata_filename,data.0,data.1);
-                                        //}
-                                        //let list_metadata_filename =format!("{}/{}/{}", root, structure_token, list_identifier);
-                                        //let mut list_data_block = blocks::BlockQueue::new();
-                                        //let data =blockencrypt::encrypt_block(list_data_block, &password);
-                                        //binary_io::write_with_nonce(&list_metadata_filename,data.0,data.1, );
-                                    }
-                                    //metadata_cache.get_mut(&[0; METADATA_INDEX_LEN as usize]).expect("Unable to write to main metadata cache").new_sub_data(&j.to_string(), &structure_token);
-                                    println!(
-                                        "New structure {} (id: {:?}[{}])",
-                                        j,
-                                        structure_token,
-                                        into_hex_metadata(structure_token)
-                                    );
-                                }
+                    "struct" => match parsed_command.next() {
+                        None => println!("You need to specify structure name"),
+                        Some(j) => {
+                            if main_metadata.sub_data().get(&j.to_string()).is_some() {
+                                println!("Structure {} already exists", j);
+                            } else {
+                                create_structure(
+                                    j,
+                                    password,
+                                    main_metadata,
+                                    current_location,
+                                    structure_cache,
+                                );
                             }
                         }
-                    }
+                    },
                     j => match current_location.current_structure_identifier() {
                         None => println!("You cannot create an object or a cell in root."),
                         Some(_) => {
@@ -283,61 +223,33 @@ pub fn run_commands(
                                 //创建一个新的Object
                                 let object_name = j;
                                 //检查Object是否存在
-                                let cells = &structure_cache
-                                    .get(
-                                        &current_location
-                                            .current_structure_identifier()
-                                            .expect("Unable to read current structure identifier"),
-                                    )
-                                    .expect("Unable to read current structure from cache")
-                                    .list
-                                    .cells;
-                                let mut is_exist = false;
-                                for k in cells {
-                                    if let blocks::Cell::Literal(l, _) = k {
-                                        if object_name == l {
-                                            is_exist = true;
+                                let is_exist = {
+                                    let cells = &structure_cache
+                                        .get(
+                                            &current_location
+                                                .current_structure_identifier()
+                                                .expect(
+                                                    "Unable to read current structure identifier",
+                                                ),
+                                        )
+                                        .expect("Unable to read current structure from cache")
+                                        .list
+                                        .cells;
+                                    let mut object_exist = false;
+                                    //TODO: 想办法优化这段代码
+                                    for k in cells {
+                                        if let blocks::Cell::Literal(l, _) = k {
+                                            if !object_exist && object_name == l {
+                                                object_exist = true;
+                                            }
                                         }
                                     }
-                                }
+                                    object_exist
+                                };
                                 if is_exist {
                                     println!("Object already exists.");
                                 } else {
-                                    let identifier = {
-                                        let mut res = random_blocks_identifier();
-                                        while {
-                                            let mut result = false;
-                                            for k in cells {
-                                                if let blocks::Cell::Literal(_, l) = k {
-                                                    if *l == res {
-                                                        result = true;
-                                                    }
-                                                }
-                                            }
-                                            result
-                                        } {
-                                            res = random_blocks_identifier();
-                                        }
-                                        res
-                                    };
-                                    structure_cache
-                                        .get_mut(
-                                            &current_location
-                                                .current_structure_identifier()
-                                                .unwrap(),
-                                        )
-                                        .unwrap()
-                                        .list
-                                        .import_cell(blocks::Cell::Literal(
-                                            j.to_string(),
-                                            identifier,
-                                        ));
-                                    println!(
-                                        "New object {} (id: {:?}[{}])",
-                                        j,
-                                        identifier,
-                                        into_hex_block(identifier)
-                                    );
+                                    create_object(j, current_location, structure_cache);
                                 }
                             } else {
                                 //新的Cell
@@ -353,89 +265,35 @@ pub fn run_commands(
                                     .sub_data()
                                     .get(j)
                                 {
-                                    println!(
-                                        "Using existing field {:?}[{}]",
-                                        from_hex_metadata(k),
-                                        k
-                                    );
+                                    println!("Using existing field {}[{}]", j, k,);
                                     let result = k;
                                     result.to_string()
                                 } else {
                                     //创建一个新的Field
-                                    let new_field_identifier = {
-                                        let mut identifier = random_metadata_identifier();
-                                        while {
-                                            structure_cache
-                                                .get(
-                                                    &current_location
-                                                        .current_structure_identifier()
-                                                        .unwrap(),
-                                                )
-                                                .expect("Unable to read structure cache metadata")
-                                                .metadata
-                                                .sub_data()
-                                                .get(j)
-                                                .is_some()
-                                        } {
-                                            identifier = random_metadata_identifier();
-                                        }
-                                        identifier
-                                    };
-                                    //将Field写入Metadata中
-                                    structure_cache
-                                        .get_mut(
-                                            &current_location
-                                                .current_structure_identifier()
-                                                .unwrap(),
-                                        )
-                                        .expect("Unable to read structure cache metadata")
-                                        .metadata
-                                        .new_sub_data(
-                                            &j.to_string(),
-                                            &into_hex_metadata(new_field_identifier),
-                                        );
-                                    //创建Field
-                                    fs::create_dir(format!(
-                                        "{}/{}/{}",
-                                        current_location.root_folder().unwrap(),
-                                        into_hex_metadata(
-                                            current_location
-                                                .current_structure_identifier()
-                                                .unwrap()
-                                        ),
-                                        into_hex_metadata(new_field_identifier)
+                                    //TODO: 确保field name != list
+                                    into_hex_metadata(create_field(
+                                        j,
+                                        current_location,
+                                        structure_cache,
                                     ))
-                                    .expect("Unable to create directory");
-                                    //封装Field
-                                    structure_cache
-                                        .get_mut(
-                                            &current_location
-                                                .current_structure_identifier()
-                                                .unwrap(),
-                                        )
-                                        .unwrap()
-                                        .cached_block
-                                        .insert(new_field_identifier, blocks::BlockQueue::new());
-                                    println!(
-                                        "Created field {:?}[{}]",
-                                        new_field_identifier,
-                                        into_hex_metadata(new_field_identifier)
-                                    );
-                                    into_hex_metadata(new_field_identifier)
                                 };
-                                //FIXME: Cell Type输入有问题
                                 let cell_type = {
                                     if let Some(k) = parsed_command.next() {
                                         let k = k.to_ascii_lowercase();
-                                        if (k == "literal") | (k == "blob") | (k == "link") {
-                                            k
-                                        } else {
-                                            println!("Warning: cell type not reconized. Treated as Literal Cell.");
-                                            String::from("literal")
+                                        match k.as_str() {
+                                            //TODO: 添加Incomplete Block支持
+                                            "literal" => blocks::CellType::Literal,
+                                            "blob" => blocks::CellType::Blob,
+                                            "link" => blocks::CellType::Link,
+                                            "revlink" => blocks::CellType::ReverseLink,
+                                            _ => {
+                                                println!("Warning: cell type not reconized. Treated as Literal Cell.");
+                                                blocks::CellType::Literal
+                                            }
                                         }
                                     } else {
                                         println!("Warning: creating a cell with no type is discouraged. Treated as Literal Cell.");
-                                        String::from("literal")
+                                        blocks::CellType::Literal
                                     }
                                 };
                                 let cell_content = {
@@ -444,6 +302,43 @@ pub fn run_commands(
                                     } else {
                                         println!("Warning: creating a cell with no content is discouraged.");
                                         "null"
+                                    }
+                                };
+                                let result_cell = match cell_type {
+                                    blocks::CellType::Literal => blocks::Cell::Literal(
+                                        cell_content.to_string(),
+                                        current_location.current_object_identifier().unwrap(),
+                                    ),
+                                    blocks::CellType::Blob => blocks::Cell::Blob(
+                                        binary_io::read_all(cell_content),
+                                        current_location.current_object_identifier().unwrap(),
+                                    ),
+                                    blocks::CellType::Link | blocks::CellType::ReverseLink => {
+                                        let link_target: Vec<&str> =
+                                            cell_content.split('/').collect();
+                                        blocks::Cell::Link(
+                                            if let blocks::CellType::Link = cell_type {
+                                                blocks::LinkType::Forward
+                                            } else {
+                                                blocks::LinkType::Reverse
+                                            },
+                                            match link_target.len() {
+                                                1 => blocks::LinkTarget::SameBlock(
+                                                    from_hex_blocks(&link_target[0].to_string()),
+                                                ),
+                                                2 => blocks::LinkTarget::AnotherField(
+                                                    from_hex_metadata(&link_target[0].to_string()),
+                                                    from_hex_blocks(&link_target[1].to_string()),
+                                                ),
+                                                3 => blocks::LinkTarget::AnotherStruct(
+                                                    from_hex_metadata(&link_target[0].to_string()),
+                                                    from_hex_metadata(&link_target[1].to_string()),
+                                                    from_hex_blocks(&link_target[2].to_string()),
+                                                ),
+                                                _ => panic!("Unexpected link format"),
+                                            },
+                                            current_location.current_object_identifier().unwrap(),
+                                        )
                                     }
                                 };
                                 //将cell_content放到cache里
@@ -457,61 +352,12 @@ pub fn run_commands(
                                     //先缓存
                                     println!("Please cache the cell before writing");
                                 } else {
-                                    structure_cache
-                                        .get_mut(
-                                            &current_location
-                                                .current_structure_identifier()
-                                                .unwrap(),
-                                        )
-                                        .unwrap()
-                                        .cached_block
-                                        .get_mut(&from_hex_metadata(&field_identifier))
-                                        .unwrap()
-                                        .import_cell(match cell_type.as_str() {
-                                            "literal" => blocks::Cell::Literal(
-                                                cell_content.to_string(),
-                                                current_location
-                                                    .current_object_identifier()
-                                                    .unwrap(),
-                                            ),
-                                            "blob" => blocks::Cell::Blob(
-                                                binary_io::read_all(cell_content),
-                                                current_location
-                                                    .current_object_identifier()
-                                                    .unwrap(),
-                                            ),
-                                            "link" => {
-                                                let link_type = if cell_content.contains('*') {
-                                                    blocks::LinkType::Reverse
-                                                } else {
-                                                    blocks::LinkType::Forward
-                                                };
-                                                let v: Vec<&str> =
-                                                    cell_content.split('/').collect();
-                                                blocks::Cell::Link(
-                                                    link_type,
-                                                    match v.len() {
-                                                        1 => blocks::LinkTarget::SameBlock(
-                                                            from_hex_blocks(&v[0].to_string()),
-                                                        ),
-                                                        2 => blocks::LinkTarget::AnotherField(
-                                                            from_hex_metadata(&v[0].to_string()),
-                                                            from_hex_blocks(&v[1].to_string()),
-                                                        ),
-                                                        3 => blocks::LinkTarget::AnotherStruct(
-                                                            from_hex_metadata(&v[0].to_string()),
-                                                            from_hex_metadata(&v[1].to_string()),
-                                                            from_hex_blocks(&v[2].to_string()),
-                                                        ),
-                                                        _ => panic!("Unexpected link format"),
-                                                    },
-                                                    current_location
-                                                        .current_object_identifier()
-                                                        .unwrap(),
-                                                )
-                                            }
-                                            _ => panic!("FIXME"),
-                                        });
+                                    create_cell(
+                                        &field_identifier,
+                                        result_cell,
+                                        current_location,
+                                        structure_cache,
+                                    );
                                 }
                             }
                         }
@@ -520,101 +366,30 @@ pub fn run_commands(
             };
         }
         "leave" => {
-            if current_location.current_structure_identifier() == None {
-                println!("Please use EXIT for leaving database");
-            } else if current_location.current_object_identifier() == None {
-                current_location.deselect_structure();
-            } else if current_location.current_cell_identifier() == None {
-                current_location.deselect_object();
-            } else {
-                current_location.deselect_cell();
+            if current_location.current_structure_identifier() != None {
+                if current_location.current_object_identifier() == None {
+                    current_location.deselect_structure();
+                } else if current_location.current_cell_identifier() == None {
+                    current_location.deselect_object();
+                } else {
+                    current_location.deselect_cell();
+                }
             }
         }
         "select" => match parsed_command.next() {
             None => println!("select command requires exactly one command"),
             Some(i) => {
                 if current_location.current_structure_identifier() == None {
-                    let structure_token = main_metadata
-                        .sub_data()
-                        .get(i)
-                        .expect("Unable to find target structure in main metadata cache");
-                    let structure_list_path = format!(
-                        "{}/{}/metadata",
-                        current_location.root_folder().unwrap(),
-                        structure_token
-                    );
-                    let structure_list_raw = binary_io::read_with_nonce(&structure_list_path);
-                    let structure_list_vec = blockencrypt::decrypt_block(
-                        &structure_list_raw.0,
-                        password,
-                        structure_list_raw.1,
-                    );
-                    let mut structure_metadata = metadata::Metadata::create();
-                    structure_metadata.import(structure_list_vec);
-                    let block_queue = if structure_metadata
-                        .sub_data()
-                        .get(&String::from("list"))
-                        .is_some()
-                    {
-                        //读取cached_block
-                        let block_list_path = format!(
-                            "{}/{}/{}",
-                            current_location.root_folder().unwrap(),
-                            structure_token,
-                            structure_metadata
-                                .sub_data()
-                                .get(&String::from("list"))
-                                .unwrap()
-                        );
-                        let block_list_raw = binary_io::read_with_nonce(&block_list_path);
-                        let block_list_vec = blockencrypt::decrypt_block(
-                            &block_list_raw.0,
-                            password,
-                            block_list_raw.1,
-                        );
-                        let mut final_block_list = blocks::BlockQueue::new();
-                        final_block_list.import_from_vec(block_list_vec);
-                        final_block_list.raw_to_cell(512);
-                        final_block_list
-                    } else {
-                        println!("Warning: no cell list founded. Using new cell list.");
-                        blocks::BlockQueue::new()
-                    };
-                    structure_cache.insert(
-                        from_hex_metadata(structure_token),
-                        Structure {
-                            metadata: structure_metadata,
-                            list: block_queue,
-                            cached_block: HashMap::new(),
-                        },
-                    );
-                    println!(
-                        "Selected structure {} ({:?} [{}])",
+                    select_structure(
                         i,
-                        from_hex_metadata(structure_token),
-                        structure_token
+                        password,
+                        main_metadata,
+                        current_location,
+                        structure_cache,
                     );
-                    current_location
-                        .select_structure((from_hex_metadata(structure_token), i.to_string()));
                 } else if current_location.current_object_identifier() == None {
-                    let object_identifier = {
-                        let mut id: Option<[u8; blocks::CELL_IDENTIFIER_LENGTH as usize]> = None;
-                        let object_list = &structure_cache
-                            .get(&current_location.current_structure_identifier().unwrap())
-                            .unwrap()
-                            .list;
-                        for individual in &object_list.cells {
-                            if let blocks::Cell::Literal(x, y) = individual {
-                                if x == i {
-                                    id = Some(*y);
-                                }
-                            }
-                        }
-                        id.expect("Unable to find object")
-                    };
-                    current_location.select_object((object_identifier, i.to_string()));
+                    select_object(i, current_location, structure_cache);
                 } else if current_location.current_cell_identifier() == None {
-                    //Some
                     let field_identifier = from_hex_blocks(
                         structure_cache
                             .get(&current_location.current_structure_identifier().unwrap())
@@ -626,16 +401,12 @@ pub fn run_commands(
                     );
                     current_location.select_cell((field_identifier, i.to_string()));
                 } else {
-                    panic!("Please return to root before select");
+                    println!("Please return to root before select");
                 }
             }
         },
         "clean" => {
-            for i in structure_cache {
-                for j in &mut i.1.cached_block {
-                    j.1.clean_cells();
-                }
-            }
+            clear_cache(structure_cache);
         }
         "structure_cache" => {
             for i in structure_cache {
@@ -888,5 +659,276 @@ pub fn run_commands(
             }
         }
         i => panic!("Unknown command {}", i),
+    }
+}
+/// Create a structure in root.
+/// it will *panic* if:
+/// 1. Current location does not have a root folder
+/// 2. Unable to create structure directory (eg. due to insufficient permission)
+fn create_structure(
+    structure_name: &str,
+    password: &secretbox::Key,
+    main_metadata: &mut metadata::Metadata,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    //Create a structure token
+    let structure_token = {
+        let mut tk = random_metadata_identifier();
+        let mut structure_directory = format!(
+            "{}/{}",
+            current_location.root_folder().unwrap(),
+            into_hex_metadata(tk)
+        );
+        while path::Path::new(&structure_directory).exists() {
+            tk = random_metadata_identifier();
+            structure_directory = format!(
+                "{}/{}",
+                current_location.root_folder().unwrap(),
+                into_hex_metadata(tk)
+            );
+        }
+        tk
+    };
+    //Create structure directory
+    std::fs::create_dir(format!(
+        "{}/{}",
+        current_location.root_folder().unwrap(),
+        into_hex_metadata(structure_token)
+    ))
+    .expect("Unable to create structure directory");
+    //Insert structure directory into main metadata
+    main_metadata.new_sub_data(structure_name, &into_hex_metadata(structure_token));
+    //Create structure cache
+    {
+        let mut structure_data = metadata::Metadata::create();
+        structure_data.new_attribute(&String::from("type"), &String::from("struct"));
+        //TODO: size可变
+        structure_data.new_attribute(&String::from("size"), &String::from("32"));
+        //Create a identifier for list
+        let list_identifier = random_metadata_identifier();
+        structure_data.new_sub_data(&String::from("list"), &into_hex_metadata(list_identifier));
+        //将Metadata导出
+        let metadata_vec = structure_data.to_vec();
+        let data = blockencrypt::encrypt_block(&metadata_vec, password);
+        let filename = format!(
+            "{}/{}/metadata",
+            current_location.root_folder().unwrap(),
+            into_hex_metadata(structure_token)
+        );
+        binary_io::write_with_nonce(&filename, &data.0, data.1);
+        //封装structure
+        let result_struct = Structure {
+            metadata: structure_data,
+            list: blocks::BlockQueue::new(),
+            cached_block: HashMap::new(),
+        };
+        structure_cache.insert(structure_token, result_struct);
+    }
+    println!(
+        "New structure {}[{}]",
+        structure_name,
+        into_hex_metadata(structure_token)
+    );
+}
+fn create_object(
+    object_name: &str,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    //Some
+    let object_identifier = {
+        let mut tk = random_blocks_identifier();
+        while {
+            let mut result = false;
+            for k in &structure_cache
+                .get(&current_location.current_structure_identifier().unwrap())
+                .unwrap()
+                .list
+                .cells
+            {
+                if !result {
+                    if let blocks::Cell::Literal(_, l) = k {
+                        if *l == tk {
+                            result = true;
+                        }
+                    }
+                }
+            }
+            result
+        } {
+            tk = random_blocks_identifier();
+        }
+        tk
+    };
+    structure_cache
+        .get_mut(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .list
+        .import_cell(blocks::Cell::Literal(
+            object_name.to_string(),
+            object_identifier,
+        ));
+    println!(
+        "New structure {}[{}]",
+        object_name,
+        into_hex_block(object_identifier)
+    );
+}
+fn create_field(
+    field_name: &str,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) -> [u8; METADATA_INDEX_LEN as usize] {
+    let field_identifier = {
+        let mut identifier = random_metadata_identifier();
+        while {
+            structure_cache
+                .get(&current_location.current_structure_identifier().unwrap())
+                .expect("Unable to read structure cache metadata")
+                .metadata
+                .sub_data()
+                .get(field_name)
+                .is_some()
+        } {
+            identifier = random_metadata_identifier();
+        }
+        identifier
+    };
+    //将Field写入Metadata中
+    structure_cache
+        .get_mut(&current_location.current_structure_identifier().unwrap())
+        .expect("Unable to read structure cache metadata")
+        .metadata
+        .new_sub_data(
+            &field_name.to_string(),
+            &into_hex_metadata(field_identifier),
+        );
+    //创建Field
+    fs::create_dir(format!(
+        "{}/{}/{}",
+        current_location.root_folder().unwrap(),
+        into_hex_metadata(current_location.current_structure_identifier().unwrap()),
+        into_hex_metadata(field_identifier)
+    ))
+    .expect("Unable to create directory");
+    //封装Field
+    structure_cache
+        .get_mut(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .cached_block
+        .insert(field_identifier, blocks::BlockQueue::new());
+    println!(
+        "New field {}[{}]",
+        field_name,
+        into_hex_metadata(field_identifier)
+    );
+    field_identifier
+}
+fn create_cell(
+    field_identifier: &str,
+    cell: blocks::Cell,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    structure_cache
+        .get_mut(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .cached_block
+        .get_mut(&from_hex_metadata(field_identifier))
+        .unwrap()
+        .import_cell(cell);
+}
+fn select_structure(
+    structure_name: &str,
+    password: &secretbox::Key,
+    main_metadata: &mut metadata::Metadata,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    let structure_token = main_metadata
+        .sub_data()
+        .get(structure_name)
+        .expect("Unable to find target structure in main metadata cache");
+    let structure_list_path = format!(
+        "{}/{}/metadata",
+        current_location.root_folder().unwrap(),
+        structure_token
+    );
+    let mut structure_metadata = metadata::Metadata::create();
+    let structure_list_raw = binary_io::read_with_nonce(&structure_list_path);
+    let structure_list_vec =
+        blockencrypt::decrypt_block(&structure_list_raw.0, password, structure_list_raw.1);
+    structure_metadata.import(structure_list_vec);
+    let cell_list = {
+        //读取cached_block
+        let block_list_path = format!(
+            "{}/{}/{}",
+            current_location.root_folder().unwrap(),
+            structure_token,
+            structure_metadata
+                .sub_data()
+                .get(&String::from("list"))
+                .unwrap()
+        );
+        let mut final_block_list = blocks::BlockQueue::new();
+        if path::Path::new(&block_list_path).is_file() {
+            let block_list_raw = binary_io::read_with_nonce(&block_list_path);
+            let block_list_vec =
+                blockencrypt::decrypt_block(&block_list_raw.0, password, block_list_raw.1);
+            final_block_list.import_from_vec(block_list_vec);
+            final_block_list.raw_to_cell(
+                structure_metadata
+                    .attribute()
+                    .get(&String::from("size"))
+                    .unwrap()
+                    .parse()
+                    .unwrap(),
+            );
+        }
+        final_block_list
+    };
+    structure_cache.insert(
+        from_hex_metadata(structure_token),
+        Structure {
+            metadata: structure_metadata,
+            list: cell_list,
+            cached_block: HashMap::new(),
+        },
+    );
+    current_location.select_structure((
+        from_hex_metadata(structure_token),
+        structure_name.to_string(),
+    ));
+    println!("Selected structure {}[{}]", structure_name, structure_token);
+}
+fn select_object(
+    object_name: &str,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    let object_identifier = {
+        let mut id: Option<[u8; blocks::CELL_IDENTIFIER_LENGTH as usize]> = None;
+        let object_list = &structure_cache
+            .get(&current_location.current_structure_identifier().unwrap())
+            .unwrap()
+            .list;
+        for individual in &object_list.cells {
+            if let blocks::Cell::Literal(x, y) = individual {
+                if x == object_name {
+                    id = Some(*y);
+                }
+            }
+        }
+        id.expect("Unable to find object")
+    };
+    current_location.select_object((object_identifier, object_name.to_string()));
+}
+fn clear_cache(structure_cache: &mut HashMap<[u8; 8], Structure>) {
+    for i in structure_cache {
+        println!("Structure {}", into_hex_metadata(*i.0));
+        for j in &mut i.1.cached_block {
+            j.1.clean_cells();
+        }
     }
 }

@@ -16,7 +16,7 @@ pub fn new_database(database_name: &str, password: &str, database_version_code: 
     let metadata_filename = format!("{}/metadata", database_name);
     let data = blockencrypt::encrypt_block(
         &initial_metadata.to_vec(),
-        &blockencrypt::password_deriv(&password, salt),
+        &blockencrypt::password_deriv(password, salt),
     );
     binary_io::write_with_nonce(&metadata_filename, &data.0, data.1);
     println!("Completed. Have a nice day.");
@@ -30,7 +30,7 @@ pub fn select_database(
     let block_decrypted = {
         let block_directory = format!("{}/metadata", database_name);
         let block = binary_io::read_with_nonce(&block_directory);
-        blockencrypt::decrypt_block(&block.0, &password, block.1)
+        blockencrypt::decrypt_block(&block.0, password, block.1)
     };
     result_metadata.import(block_decrypted);
     if result_metadata

@@ -9,6 +9,12 @@ pub enum Cell {
     LiteralIncomplete(Vec<u8>, IncompleteIdentifier),
     BlobIncomplete(Vec<u8>, IncompleteIdentifier),
 }
+pub enum CellType {
+    Literal,
+    Blob,
+    Link,
+    ReverseLink,
+}
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
