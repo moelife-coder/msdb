@@ -594,7 +594,7 @@ pub fn run_commands(
 /// it will *panic* if:
 /// 1. Current location does not have a root folder
 /// 2. Unable to create structure directory (eg. due to insufficient permission)
-fn create_structure(
+pub fn create_structure(
     structure_name: &str,
     password: &secretbox::Key,
     main_metadata: &mut metadata::Metadata,
