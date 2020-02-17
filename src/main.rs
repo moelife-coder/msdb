@@ -100,8 +100,7 @@ fn main() {
                                 None => rpassword::prompt_password_stdout("Password: ").unwrap(),
                             };
                             let salt = {
-                                let salt_directory =
-                                    format!("{}/salt", current_location.root_folder().unwrap());
+                                let salt_directory = format!("{}/salt", try_database);
                                 let salt_vec = binary_io::read_all(&salt_directory);
                                 pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
                             };
