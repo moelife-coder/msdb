@@ -290,6 +290,15 @@ pub fn run_commands(
                 },
             };
         }
+        "ls" => {
+            if current_location.current_structure_identifier() == None {
+                ugly_print_structure(main_metadata);
+            } else if current_location.current_object_identifier() == None {
+                ugly_print_objects(current_location, structure_cache);
+            } else {
+                ugly_print_cell(current_location, structure_cache);
+            }
+        }
         "leave" => leave(current_location),
         "select" => match parsed_command.next() {
             None => println!("select command requires exactly one command"),
@@ -533,7 +542,7 @@ pub fn run_commands(
                     );
             }
         }
-        "ls" => {
+        "show" => {
             if current_location.current_structure_identifier() == None {
                 println!("{}", main_metadata);
             } else if current_location.current_object_identifier() == None {
@@ -973,6 +982,114 @@ fn leave(current_location: &mut DatabaseLocation) {
             current_location.deselect_object();
         } else {
             current_location.deselect_cell();
+        }
+    }
+}
+/// Ugly version of printing structures inside main metadata
+fn ugly_print_structure(main_metadata: &metadata::Metadata) {
+    println!("[Config]");
+    for (i, j) in main_metadata.attribute() {
+        println!("{} = {}", i, j);
+    }
+    println!("[Structure]");
+    for (i, j) in main_metadata.sub_data() {
+        println!("{} -> {}", i, j);
+    }
+}
+///Ugly version of printing objects inside structure
+fn ugly_print_objects(
+    current_location: &DatabaseLocation,
+    structure_cache: &HashMap<[u8; 8], Structure>,
+) {
+    for i in &structure_cache
+        .get(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .list
+        .cells
+    {
+        println!(
+            "{} -> {}",
+            if let blocks::Cell::Literal(j, _) = i {
+                j
+            } else {
+                "null"
+            },
+            if let blocks::Cell::Literal(_, j) = i {
+                into_hex_block(*j)
+            } else {
+                "null".to_string()
+            }
+        );
+    }
+}
+/// Ugly version of printing cells inside current object
+fn ugly_print_cell(
+    current_location: &DatabaseLocation,
+    structure_cache: &HashMap<[u8; 8], Structure>,
+) {
+    let current_object = current_location.current_object_identifier().unwrap();
+    for (i, j) in &structure_cache
+        .get(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .cached_block
+    {
+        let current_field = format!(
+            "{}[{}]",
+            &structure_cache
+                .get(&current_location.current_structure_identifier().unwrap())
+                .unwrap()
+                .metadata
+                .sub_data()
+                .get(&hex::encode(i))
+                .unwrap(),
+            hex::encode(i)
+        );
+        for k in &j.cells {
+            //Get current field name and identifier
+            if match k {
+                blocks::Cell::Literal(_, l)
+                | blocks::Cell::Blob(_, l)
+                | blocks::Cell::Link(_, _, l) => *l,
+                blocks::Cell::LiteralIncomplete(_, l) | blocks::Cell::BlobIncomplete(_, l) => {
+                    l.identifier
+                }
+            } == current_object
+            {
+                println!(
+                    "{}",
+                    match k {
+                        blocks::Cell::Literal(m, _) =>
+                            format!("{} : [Literal] {}", current_field, m),
+                        blocks::Cell::Blob(m, _) =>
+                            format!("{}: [Blob] {}", current_field, hex::encode(m)),
+                        blocks::Cell::Link(m, n, _) => {
+                            format!(
+                                "{}: [Link] {} - {}",
+                                current_field,
+                                match m {
+                                    blocks::LinkType::Forward => "Forward",
+                                    blocks::LinkType::Reverse => "Reverse",
+                                },
+                                match n {
+                                    blocks::LinkTarget::SameBlock(o) => into_hex_block(*o),
+                                    blocks::LinkTarget::AnotherField(o, p) =>
+                                        format!("{}/{}", into_hex_metadata(*o), into_hex_block(*p)),
+                                    blocks::LinkTarget::AnotherStruct(o, p, q) => format!(
+                                        "{}/{}/{}",
+                                        into_hex_metadata(*o),
+                                        into_hex_metadata(*p),
+                                        into_hex_block(*q)
+                                    ),
+                                }
+                            )
+                        }
+                        blocks::Cell::BlobIncomplete(m, _) =>
+                            format!("{}: [BlobIncomplete] {}", current_field, hex::encode(m)),
+                        blocks::Cell::LiteralIncomplete(m, _) =>
+                            format!("{}: [LiteralIncomplete] {}", current_field, hex::encode(m)),
+                    }
+                )
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 pub struct Metadata {
+    has_modified: bool,
     attribute: HashMap<String, String>,
     sub_data: HashMap<String, String>,
 }
@@ -9,6 +10,9 @@ impl Metadata {
     }
     pub const fn sub_data(&self) -> &HashMap<String, String> {
         &self.sub_data
+    }
+    pub const fn has_modified(&self) -> bool {
+        self.has_modified
     }
     pub fn into_vec(self) -> Vec<u8> {
         let mut index: Vec<u8> = Vec::new();
@@ -53,11 +57,17 @@ impl Metadata {
         self.attribute
             .entry(lhs.to_string())
             .or_insert_with(|| rhs.to_string());
+        if !self.has_modified {
+            self.has_modified = true;
+        }
     }
     pub fn new_sub_data(&mut self, lhs: &str, rhs: &str) {
         self.sub_data
             .entry(lhs.to_string())
             .or_insert_with(|| rhs.to_string());
+        if !self.has_modified {
+            self.has_modified = true;
+        }
     }
     pub fn import(&mut self, metadata_block: Vec<u8>) {
         let metadata_block =
@@ -88,15 +98,22 @@ impl Metadata {
                 self.sub_data.insert(lhs.to_string(), rhs.to_string());
             }
         }
+        if !self.has_modified {
+            self.has_modified = true;
+        }
     }
     pub fn clear(&mut self) {
         self.attribute = HashMap::new();
         self.sub_data = HashMap::new();
+        if !self.has_modified {
+            self.has_modified = true;
+        }
     }
     pub fn create() -> Self {
         Self {
             attribute: HashMap::new(),
             sub_data: HashMap::new(),
+            has_modified: false,
         }
     }
 }
