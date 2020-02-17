@@ -333,12 +333,16 @@ pub fn run_commands(
             clear_cache(structure_cache);
         }
         "sync" => {
-            println!("Writing main metadata");
-            {
-                let main_metadata_vec = main_metadata.to_vec();
-                let data = blockencrypt::encrypt_block(&main_metadata_vec, password);
-                let filename = format!("{}/metadata", current_location.root_folder().unwrap());
-                binary_io::write_with_nonce(&filename, &data.0, data.1);
+            if main_metadata.has_modified() {
+                println!("Writing main metadata");
+                {
+                    let main_metadata_vec = main_metadata.to_vec();
+                    let data = blockencrypt::encrypt_block(&main_metadata_vec, password);
+                    let filename = format!("{}/metadata", current_location.root_folder().unwrap());
+                    binary_io::write_with_nonce(&filename, &data.0, data.1);
+                }
+            } else {
+                println!("Main metadata not modified.");
             }
             for i in structure_cache {
                 println!("Writing {}", into_hex_metadata(*i.0));
@@ -379,16 +383,20 @@ pub fn run_commands(
                     }
                 }
                 {
-                    println!(" Metadata");
-                    //Save metadata
-                    let metadata_sync_vec = i.1.metadata.to_vec();
-                    let data = blockencrypt::encrypt_block(&metadata_sync_vec, password);
-                    let filename = format!(
-                        "{}/{}/metadata",
-                        current_location.root_folder().unwrap(),
-                        into_hex_metadata(*i.0)
-                    );
-                    binary_io::write_with_nonce(&filename, &data.0, data.1);
+                    if i.1.metadata.has_modified() {
+                        println!(" Metadata");
+                        //Save metadata
+                        let metadata_sync_vec = i.1.metadata.to_vec();
+                        let data = blockencrypt::encrypt_block(&metadata_sync_vec, password);
+                        let filename = format!(
+                            "{}/{}/metadata",
+                            current_location.root_folder().unwrap(),
+                            into_hex_metadata(*i.0)
+                        );
+                        binary_io::write_with_nonce(&filename, &data.0, data.1);
+                    } else {
+                        println!(" Metadata(Ignored)")
+                    }
                 }
             }
         }
