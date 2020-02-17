@@ -1041,14 +1041,21 @@ fn ugly_print_cell(
     {
         let current_field = format!(
             "{}[{}]",
-            &structure_cache
-                .get(&current_location.current_structure_identifier().unwrap())
-                .unwrap()
-                .metadata
-                .sub_data()
-                .get(&hex::encode(i))
-                .unwrap(),
-            hex::encode(i)
+            {
+                let mut result: &str = "";
+                for k in structure_cache
+                    .get(&current_location.current_structure_identifier().unwrap())
+                    .unwrap()
+                    .metadata
+                    .sub_data()
+                {
+                    if k.1 == &into_hex_metadata(*i) {
+                        result = k.0;
+                    }
+                }
+                result
+            },
+            into_hex_metadata(*i)
         );
         for k in &j.cells {
             //Get current field name and identifier
