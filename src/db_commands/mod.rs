@@ -734,6 +734,12 @@ fn create_field(
             &field_name.to_string(),
             &into_hex_metadata(field_identifier),
         );
+    //Create a empty structure cache in structure cache
+    structure_cache
+        .get_mut(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .cached_block
+        .insert(field_identifier, blocks::BlockQueue::new());
     //Create field
     fs::create_dir(format!(
         "{}/{}/{}",
