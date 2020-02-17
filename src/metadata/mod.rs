@@ -10,6 +10,28 @@ impl Metadata {
     pub const fn sub_data(&self) -> &HashMap<String, String> {
         &self.sub_data
     }
+    pub fn into_vec(self) -> Vec<u8> {
+        let mut index: Vec<u8> = Vec::new();
+        for (key, val) in self.attribute {
+            index.append(&mut key.into_bytes());
+            index.append(&mut String::from("=").as_bytes().to_vec());
+            index.append(&mut val.into_bytes());
+            index.append(&mut String::from(";").as_bytes().to_vec());
+        }
+        index.append(&mut String::from("$").as_bytes().to_vec());
+        for (key, val) in self.sub_data {
+            index.append(&mut key.into_bytes());
+            index.append(&mut String::from("=").as_bytes().to_vec());
+            index.append(&mut val.into_bytes());
+            index.append(&mut String::from(";").as_bytes().to_vec());
+        }
+        index
+    }
+    pub fn from_vec(metadata_block: Vec<u8>) -> Self {
+        let mut result = Self::create();
+        result.import(metadata_block);
+        result
+    }
     pub fn to_vec(&self) -> Vec<u8> {
         let mut index: Vec<u8> = Vec::new();
         for (key, val) in &self.attribute {

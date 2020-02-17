@@ -9,12 +9,6 @@ pub enum Cell {
     LiteralIncomplete(Vec<u8>, IncompleteIdentifier),
     BlobIncomplete(Vec<u8>, IncompleteIdentifier),
 }
-pub enum CellType {
-    Literal,
-    Blob,
-    Link,
-    ReverseLink,
-}
 impl std::fmt::Display for Cell {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
@@ -131,6 +125,12 @@ impl BlockQueue {
     }
     pub fn import_from_vec(&mut self, raw_content: Vec<u8>) {
         self.queue.push(raw_content);
+    }
+    pub fn from_vec(raw_content: Vec<u8>, default_cell_size: u32) -> Self {
+        let mut result = Self::new();
+        result.import_from_vec(raw_content);
+        result.raw_to_cell(default_cell_size);
+        result
     }
     pub fn raw_to_cell(&mut self, default_cell_size: u32) {
         let mut pre_translate_result: Vec<CellReadingBuffer> = Vec::new();
