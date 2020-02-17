@@ -127,7 +127,7 @@ fn main() {
                 _ => {
                     if password.1 {
                         db_commands::run_commands(
-                            &user_command_unparsed,
+                            &user_input,
                             &mut main_metadata,
                             &mut current_location,
                             &password.0,
