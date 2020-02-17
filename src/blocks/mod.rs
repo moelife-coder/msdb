@@ -161,7 +161,7 @@ impl BlockQueue {
                         }
                     }
                     1..=12 => {
-                        if same_size_as_default {
+                        if !same_size_as_default {
                             //i[1]~i[4] => 大小
                             //i[5]~i[12] => Identifier
                             match current_cell.current_byte_offset {
