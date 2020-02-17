@@ -4,7 +4,6 @@ use sodiumoxide::crypto::secretbox;
 use std::collections::HashMap;
 use std::path;
 extern crate test;
-use test::Bencher;
 mod binary_io;
 mod blockencrypt;
 mod blocks;
@@ -12,27 +11,6 @@ mod db_commands;
 mod metadata;
 mod utils;
 const VERSION_NUMBER: u8 = 4;
-#[bench]
-fn create_database_and_delete(b: &mut Bencher) {
-    b.iter(|| {
-        utils::new_database("testdb", "password", VERSION_NUMBER);
-        std::fs::remove_dir_all("testdb").unwrap();
-    });
-}
-#[bench]
-fn load_empty_database(b: &mut Bencher) {
-    let try_passwd = {
-        let password_raw = "123";
-        let salt = {
-            let salt_vec = binary_io::read_all("benchdb/salt");
-            pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
-        };
-        blockencrypt::password_deriv(&password_raw, salt)
-    };
-    b.iter(|| {
-        utils::select_database("benchdb", &try_passwd, VERSION_NUMBER);
-    });
-}
 fn main() {
     let mut current_location = db_commands::DatabaseLocation::new();
     let mut password: (secretbox::Key, bool) = (secretbox::gen_key(), false);
@@ -161,5 +139,32 @@ fn main() {
                 }
             }
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use test::Bencher;
+    #[bench]
+    fn create_database(b: &mut Bencher) {
+        b.iter(|| {
+            utils::new_database("testdb", "password", VERSION_NUMBER);
+        });
+        std::fs::remove_dir_all("testdb").unwrap();
+    }
+    #[bench]
+    fn load_empty_database(b: &mut Bencher) {
+        utils::new_database("testdb", "password", VERSION_NUMBER);
+        let try_passwd = {
+            let password_raw = "123";
+            let salt = {
+                let salt_vec = binary_io::read_all("emptydb/salt");
+                pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
+            };
+            blockencrypt::password_deriv(&password_raw, salt)
+        };
+        b.iter(|| {
+            utils::select_database("emptydb", &try_passwd, VERSION_NUMBER);
+        });
     }
 }
