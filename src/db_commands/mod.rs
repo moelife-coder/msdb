@@ -373,7 +373,7 @@ pub fn run_commands(
                         j.1.cell_to_raw(Some(65536), 512);
                         for (current_num, k) in j.1.queue.iter().enumerate() {
                             let data = blockencrypt::encrypt_block(k, password);
-                            let filename = format!("{}/{}", folder_name, current_num);
+                            let filename = format!("{}/{}.blk", folder_name, current_num);
                             binary_io::write_with_nonce(&filename, &data.0, data.1);
                         }
                     }
