@@ -14,6 +14,9 @@ impl Metadata {
     pub const fn has_modified(&self) -> bool {
         self.has_modified
     }
+    pub fn set_not_modified(&mut self) {
+        self.has_modified = false;
+    }
     pub fn into_vec(self) -> Vec<u8> {
         let mut index: Vec<u8> = Vec::new();
         for (key, val) in self.attribute {

@@ -341,6 +341,7 @@ pub fn run_commands(
                     let filename = format!("{}/metadata", current_location.root_folder().unwrap());
                     binary_io::write_with_nonce(&filename, &data.0, data.1);
                 }
+                main_metadata.set_not_modified();
             } else {
                 println!("Main metadata not modified.");
             }
@@ -394,6 +395,7 @@ pub fn run_commands(
                             into_hex_metadata(*i.0)
                         );
                         binary_io::write_with_nonce(&filename, &data.0, data.1);
+                        i.1.metadata.set_not_modified();
                     } else {
                         println!(" Metadata(Ignored)")
                     }
