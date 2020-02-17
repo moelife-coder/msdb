@@ -691,7 +691,7 @@ fn create_object(
             object_identifier,
         ));
     println!(
-        "New structure {}[{}]",
+        "New object {}[{}]",
         object_name,
         into_hex_block(object_identifier)
     );
