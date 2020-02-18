@@ -247,40 +247,40 @@ mod tests {
     #[bench]
     fn create_database(b: &mut Bencher) {
         b.iter(|| {
-            utils::new_database("testdb", "password", VERSION_NUMBER);
+            utils::new_database("createddb", "password", VERSION_NUMBER);
         });
-        std::fs::remove_dir_all("testdb").unwrap();
+        std::fs::remove_dir_all("createddb").unwrap();
     }
     #[bench]
     fn load_empty_database(b: &mut Bencher) {
-        utils::new_database("testdb", "password", VERSION_NUMBER);
+        utils::new_database("emptydb", "password", VERSION_NUMBER);
         let try_passwd = {
             let password_raw = "password";
             let salt = {
-                let salt_vec = binary_io::read_all("testdb/salt");
+                let salt_vec = binary_io::read_all("emptydb/salt");
                 pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
             };
             blockencrypt::password_deriv(&password_raw, salt)
         };
         b.iter(|| {
-            utils::select_database("testdb", &try_passwd, VERSION_NUMBER);
+            utils::select_database("emptydb", &try_passwd, VERSION_NUMBER);
         });
-        std::fs::remove_dir_all("testdb").unwrap();
+        std::fs::remove_dir_all("emptydb").unwrap();
     }
     #[bench]
     fn create_empty_struct(b: &mut Bencher) {
-        utils::new_database("testdb", "password", VERSION_NUMBER);
+        utils::new_database("structdb", "password", VERSION_NUMBER);
         let try_passwd = {
             let password_raw = "password";
             let salt = {
-                let salt_vec = binary_io::read_all("testdb/salt");
+                let salt_vec = binary_io::read_all("structdb/salt");
                 pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
             };
             blockencrypt::password_deriv(&password_raw, salt)
         };
-        let mut main_metadata = utils::select_database("testdb", &try_passwd, VERSION_NUMBER);
+        let mut main_metadata = utils::select_database("structdb", &try_passwd, VERSION_NUMBER);
         let mut current_location = db_commands::DatabaseLocation::new();
-        current_location.select_root("testdb".to_string());
+        current_location.select_root("structdb".to_string());
         b.iter(|| {
             db_commands::create_structure(
                 "testname",
@@ -290,6 +290,6 @@ mod tests {
                 None,
             )
         });
-        std::fs::remove_dir_all("testdb").unwrap();
+        std::fs::remove_dir_all("structdb").unwrap();
     }
 }
