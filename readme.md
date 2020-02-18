@@ -149,6 +149,10 @@ COMMAND [COMMAND ARGUMENTS]
 
 > Special note: if you are using a command script, note that if you leave a optional parameter blank (for example, database password when decrypting), *msdb* will prompt for the parameter.
 
+## Support
+
+You may use [Github Issues](https://github.com/moelife-coder/msdb/issues) to report bugs. Please note that currently the application is still in early-stage, and there might be many bugs.
+
 ## License
 
 This project is licensed under the [GNU General Public License v3.0 only](license).
