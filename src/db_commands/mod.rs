@@ -603,6 +603,47 @@ pub fn run_commands(
                 println!("`unload` command requires exactly one parameter");
             }
         }
+        "setprop" => {
+            if let Some(name) = parsed_command.next() {
+                if let Some(value) = parsed_command.next() {
+                    if current_location.current_structure_identifier() == None {
+                        main_metadata.new_attribute(name, value);
+                    } else if current_location.current_object_identifier() == None {
+                        structure_cache
+                            .get_mut(&current_location.current_structure_identifier().unwrap())
+                            .unwrap()
+                            .metadata
+                            .new_attribute(name, value);
+                    } else {
+                        println!("currently `setprop` only works with main metadata and structure metadata");
+                    }
+                } else {
+                    println!("`setprop` command requires exactly two parameter");
+                }
+            } else {
+                println!("`setprop` command requires exactly two parameter");
+            }
+        }
+        "getprop" => {
+            if current_location.current_structure_identifier() == None {
+                for (i, j) in main_metadata.attribute() {
+                    println!("{}={}", i, j);
+                }
+            } else if current_location.current_object_identifier() == None {
+                for (i, j) in structure_cache
+                    .get_mut(&current_location.current_structure_identifier().unwrap())
+                    .unwrap()
+                    .metadata
+                    .attribute()
+                {
+                    println!("{}={}", i, j);
+                }
+            } else {
+                println!(
+                    "currently `getprop` only works with main metadata and structure metadata"
+                );
+            }
+        }
         "show" => {
             if current_location.current_structure_identifier() == None {
                 println!("{}", main_metadata);

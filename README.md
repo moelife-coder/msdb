@@ -136,7 +136,7 @@ COMMAND [COMMAND ARGUMENTS]
     Explicitly remove structure from cache. May improve performance.
 - `setprop NAME VALUE`
 
-    Create/alter a metadata propertie. If current location is in database root, it will write to main metadata; if in a structure, it will write to structure metadata; if in a object, it will write to cell-list metadata; if in a cell, it will write to field metadata.
+    Create/alter a metadata propertie. If current location is in database root, it will write to main metadata; if in a structure, it will write to structure metadata.
 - `getprop`
 
     View metadata properties
