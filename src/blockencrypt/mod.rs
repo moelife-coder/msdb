@@ -27,5 +27,10 @@ pub fn decrypt_block(
     password: &secretbox::Key,
     nonce: secretbox::Nonce,
 ) -> Vec<u8> {
-    secretbox::open(input_block, &nonce, password).unwrap()
+    if let Ok(m) = secretbox::open(input_block, &nonce, password) {
+        m
+    } else {
+        println!("Invalid password");
+        std::process::exit(0);
+    }
 }
