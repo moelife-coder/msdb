@@ -1,6 +1,6 @@
 # MSDB - Mobile Secure DataBase
 
-![License](https://img.shields.io/github/license/moelife-coder/msdb) ![Issues](https://img.shields.io/github/issues/moelife-coder/msdb) ![version](https://img.shields.io/crates/v/msdb)
+![License](https://img.shields.io/github/license/moelife-coder/msdb) ![Issues](https://img.shields.io/github/issues/moelife-coder/msdb) ![version](https://img.shields.io/crates/v/msdb) [![Moelife-coder](https://circleci.com/gh/moelife-coder/msdb.svg?style=shield)](https://circleci.com/gh/moelife-coder/msdb) [![Coverage Status](https://coveralls.io/repos/github/moelife-coder/msdb/badge.svg?branch=master)](https://coveralls.io/github/moelife-coder/msdb?branch=master)
 
 msdb is a user-friendly, intuitive and standalone database.
 [![asciicast](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG.svg)](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG)

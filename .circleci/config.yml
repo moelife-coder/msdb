@@ -21,6 +21,11 @@ jobs:
       - run:
           name: Test
           command: cargo test
+      - run:
+          name: Coverage
+          command: |
+            cargo install cargo-tarpaulin
+            cargo tarpaulin --ciserver circle-ci --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U
       - store_artifacts:
           name: releasing artifacts
           path: target/release/msdb
