@@ -28,6 +28,11 @@ jobs:
       - run:
           name: Test
           command: cargo test
+      - run:
+          name: Audit
+          command: |
+            cargo install cargo-audit
+            cargo audit
       - store_artifacts:
           name: releasing artifacts
           path: target/release/msdb
