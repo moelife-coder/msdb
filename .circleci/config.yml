@@ -3,7 +3,7 @@ version: 2
 jobs:
   coverages:
     docker:
-      - image: xd009642/tarpaulin
+      - image: xd009642/tarpaulin:latest-nightly
     steps:
       - checkout
       - restore_cache:
