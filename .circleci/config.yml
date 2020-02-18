@@ -3,7 +3,7 @@ version: 2
 jobs:
   coverages:
     docker:
-      - image: veloren/veloren-docker-ci:latest
+      - image: xd009642/tarpaulin
     steps:
       - checkout
       - restore_cache:
