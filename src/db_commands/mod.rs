@@ -579,6 +579,19 @@ pub fn run_commands(
                     );
             }
         }
+        "del" => {
+            if let Some(i) = parsed_command.next() {
+                if current_location.current_structure_identifier() == None {
+                    delete_structure(i, current_location, main_metadata);
+                } else if current_location.current_object_identifier() == None {
+                    delete_object(i, current_location, structure_cache);
+                } else if current_location.current_cell_identifier() == None {
+                    delete_cell(i, current_location, structure_cache);
+                } else {
+                    println!("Please `leave` the cell before deleting it");
+                }
+            }
+        }
         "show" => {
             if current_location.current_structure_identifier() == None {
                 println!("{}", main_metadata);
@@ -957,6 +970,51 @@ fn delete_cell(
             .delete_cell(current_location.current_object_identifier().unwrap());
     } else {
         println!("Cannot delete cell {}: cell field not exist", cell_name);
+    }
+}
+/// Delete object
+fn delete_object(
+    object_name: &str,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    let field = structure_cache
+        .get_mut(
+            &current_location
+                .current_structure_identifier()
+                .expect("Unable to find current structure identifier"),
+        )
+        .expect("Unable to read structure cache metadata");
+    field
+        .cached_block
+        .get_mut(&from_hex_metadata(
+            field.metadata.sub_data().get("list").unwrap(),
+        ))
+        .unwrap()
+        .delete_literal_cell_based_on_content(object_name);
+}
+fn delete_structure(
+    structure_name: &str,
+    current_location: &mut DatabaseLocation,
+    main_metadata: &mut metadata::Metadata,
+) {
+    if let Some(identifier) = main_metadata.sub_data().get(structure_name) {
+        if std::fs::remove_dir(format!(
+            "{}/{}",
+            current_location.root_folder().unwrap(),
+            identifier
+        ))
+        .is_err()
+        {
+            println!("Error happends when removing structure")
+        } else {
+            main_metadata.delete_sub_data(structure_name);
+        }
+    } else {
+        println!(
+            "Unable to remove structure: structure {} does not exist",
+            structure_name
+        );
     }
 }
 /// Create a cell in current object

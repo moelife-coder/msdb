@@ -72,6 +72,9 @@ impl Metadata {
             self.has_modified = true;
         }
     }
+    pub fn delete_sub_data(&mut self, lhs: &str) {
+        self.sub_data.remove(lhs);
+    }
     pub fn import(&mut self, metadata_block: Vec<u8>) {
         let metadata_block =
             String::from_utf8(metadata_block).expect("Unable to convert Metadata Vector to String");

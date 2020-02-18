@@ -664,4 +664,22 @@ impl BlockQueue {
             self.cells.remove(i);
         }
     }
+    pub fn delete_literal_cell_based_on_content(&mut self, content: &str) {
+        let mut position_deletd = Vec::new();
+        let mut position = 0;
+        for i in &self.cells {
+            if match i {
+                Cell::Literal(j, _) => j,
+                _ => "",
+            } == content
+            {
+                position_deletd.push(position);
+            } else {
+                position += 1;
+            }
+        }
+        for i in position_deletd {
+            self.cells.remove(i);
+        }
+    }
 }
