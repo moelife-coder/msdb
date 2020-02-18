@@ -591,6 +591,16 @@ pub fn run_commands(
                 } else {
                     println!("Please `leave` the cell before deleting it");
                 }
+            } else {
+                println!("`del` command requires exactly one parameter");
+            }
+        }
+        "unload" => {
+            if let Some(i) = parsed_command.next() {
+                structure_cache
+                    .remove(&from_hex_metadata(main_metadata.sub_data().get(i).unwrap()));
+            } else {
+                println!("`unload` command requires exactly one parameter");
             }
         }
         "show" => {
