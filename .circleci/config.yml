@@ -1,17 +1,13 @@
 version: 2
 
 jobs:
-  coverages:
-    docker:
-      - image: xd009642/tarpaulin:latest-nightly
+  coverage:
+    machine: true
     steps:
       - checkout
-      - restore_cache:
-          key: project-cache
       - run:
-          name: coverage
-          command: |
-            cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U
+          name: Coverage with docker
+          command: docker run -it --security-opt seccomp=unconfined -v "${PWD}:/volume" xd009642/tarpaulin:latest-nightly cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U
   build:
     docker:
       - image: rustlang/rust:nightly
