@@ -1,5 +1,7 @@
 # MSDB - Mobile Secure DataBase
 
+![License](https://img.shields.io/github/license/moelife-coder/msdb) ![Issues](https://img.shields.io/github/issues/moelife-coder/msdb) ![version](https://img.shields.io/crates/v/msdb)
+
 msdb is a user-friendly, intuitive and standalone database.
 [![asciicast](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG.svg)](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG)
 
@@ -152,6 +154,13 @@ COMMAND [COMMAND ARGUMENTS]
 ## Support
 
 You may use [Github Issues](https://github.com/moelife-coder/msdb/issues) to report bugs. Please note that currently the application is still in early-stage, and there might be many bugs.
+
+## Roadmap
+
+- 2019/2 : Stablize program, add following features:
+  - Performance imporvement in `sync`
+  - Add support for more commands
+  - Complete support for command script
 
 ## License
 
