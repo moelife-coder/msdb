@@ -1,10 +1,10 @@
 [package]
 name = "msdb"
 version = "0.4.0"
-description = "A MaSsive-data orientated DataBase"
-repository = "https://example.com"
+description = "Mobile Secure DataBase"
+repository = "https://github.com/moelife-coder/msdb"
 readme = "README.md"
-license = "GPL3"
+license = "GPL-3.0-only"
 keywords = ["database"]
 categories = ["database"]
 authors = ["moelife-coder <61054382+moelife-coder@users.noreply.github.com>"]

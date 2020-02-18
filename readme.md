@@ -151,4 +151,4 @@ COMMAND [COMMAND ARGUMENTS]
 
 ## License
 
-This project is licensed under the [GNU GENERAL PUBLIC LICENSE Version 3](license).
+This project is licensed under the [GNU General Public License v3.0 only](license).
