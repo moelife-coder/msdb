@@ -27,9 +27,15 @@ jobs:
           name: Test
           command: rustup run stable cargo test
       - store_artifacts:
+        name: releasing artifacts
         path: target/release/msdb
       - save_cache:
           key: project-cache
           paths:
             - "~/.cargo"
             - "./target"
+workflows:
+  version: 2
+  build_workflow:
+    jobs:
+      - build
