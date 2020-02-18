@@ -25,7 +25,7 @@ jobs:
           name: Coverage
           command: |
             cargo install cargo-tarpaulin
-            cargo tarpaulin --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U
+            cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U || cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U || cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U || cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U || cargo tarpaulin -v --coveralls XnPe7Iw6HBv74eekTqiK0Bmswdv8ejz0U
       - store_artifacts:
           name: releasing artifacts
           path: target/release/msdb
