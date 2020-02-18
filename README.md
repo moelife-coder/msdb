@@ -142,7 +142,7 @@ COMMAND [COMMAND ARGUMENTS]
     View metadata properties
 
 - `debls`
-    Old version of ls
+    Old version of `ls`
 
 ### Commands for scripting
 
@@ -155,13 +155,6 @@ COMMAND [COMMAND ARGUMENTS]
 ## Support
 
 You may use [Github Issues](https://github.com/moelife-coder/msdb/issues) to report bugs. Please note that currently the application is still in early-stage, and there might be many bugs.
-
-## Roadmap
-
-- 2019/2 : Stablize program, add following features:
-  - Performance imporvement in `sync`
-  - Add support for more commands
-  - Complete support for command script
 
 ## License
 
