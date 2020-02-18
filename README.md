@@ -5,6 +5,20 @@
 msdb is a user-friendly, intuitive and standalone database.
 [![asciicast](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG.svg)](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG)
 
+## Features
+
+- No installation required / database stored in folder
+
+- State-of-the-art encryption
+
+- Relatively high performance
+
+- Simple code logic
+
+- Dynamic field (you can store different type of content in one field)
+
+- User-friendly
+
 ## Getting started
 
 ### Prerequisites
@@ -145,6 +159,12 @@ COMMAND [COMMAND ARGUMENTS]
     Old version of `ls`
 
 > Special note: if you are using a command script, every parameter except `password` for `create` and `decrypt` command is **required**.
+
+## Contributors
+
+| [**moelife-coder**](https://github.com/moelife-coder) |
+| :---: |
+| [![Moelife-coder](https://avatars0.githubusercontent.com/u/61054382?v=4&s=200)](https://github.com/moelife-coder)|
 
 ## Support
 
