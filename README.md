@@ -123,9 +123,9 @@ COMMAND [COMMAND ARGUMENTS]
 - `sync`
 
     Write database changes onto disk
-- `load CELLNAME`
+- `load [CELLNAME]`
 
-    Explicitly specify a cell to be loaded into cache. Normally, cells inside object will not automatically loaded due to slow performance.
+    Explicitly specify a cell to be loaded into cache. Normally, cells inside object will not automatically loaded due to slow performance. `load` without specifying CELLNAME will load all fields inside structure.
 
 ### Dangerous / Debugging
 
