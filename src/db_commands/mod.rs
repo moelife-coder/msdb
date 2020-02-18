@@ -290,6 +290,24 @@ pub fn run_commands(
                 },
             };
         }
+        "alter" => {
+            if current_location.current_object_identifier() == None {
+                println!("You cannot alter a cell outside objects");
+            } else {
+                match parsed_command.next() {
+                    None => println!("alter command requires three arguments"),
+                    Some(i) => match parsed_command.next() {
+                        None => println!("alter command requires three arguments"),
+                        Some(j) => match parsed_command.next() {
+                            None => println!("alter command requires three arguments"),
+                            Some(k) => {
+                                alter_cell(i, j, k, password, current_location, structure_cache)
+                            }
+                        },
+                    },
+                }
+            }
+        }
         "ls" => {
             if current_location.current_structure_identifier() == None {
                 ugly_print_structure(main_metadata);
@@ -897,7 +915,50 @@ fn clear_cache(structure_cache: &mut HashMap<[u8; 8], Structure>) {
         }
     }
 }
-
+fn alter_cell(
+    cell_name: &str,
+    cell_type: &str,
+    cell_content: &str,
+    password: &secretbox::Key,
+    current_location: &mut DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    //First, delete the cell
+    delete_cell(cell_name, current_location, structure_cache);
+    //Then, create a new cell
+    create_cell(
+        cell_name,
+        cell_type,
+        cell_content,
+        password,
+        current_location,
+        structure_cache,
+    );
+}
+/// Delete cell
+fn delete_cell(
+    cell_name: &str,
+    current_location: &DatabaseLocation,
+    structure_cache: &mut HashMap<[u8; 8], Structure>,
+) {
+    let field = structure_cache
+        .get_mut(
+            &current_location
+                .current_structure_identifier()
+                .expect("Unable to find current structure identifier"),
+        )
+        .expect("Unable to read structure cache metadata");
+    let field_identifier = field.metadata.sub_data().get(cell_name);
+    if let Some(identifier) = field_identifier {
+        field
+            .cached_block
+            .get_mut(&from_hex_metadata(identifier))
+            .unwrap()
+            .delete_cell(current_location.current_object_identifier().unwrap());
+    } else {
+        println!("Cannot delete cell {}: cell field not exist", cell_name);
+    }
+}
 /// Create a cell in current object
 fn create_cell(
     field_name: &str,

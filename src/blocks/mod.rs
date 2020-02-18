@@ -646,4 +646,22 @@ impl BlockQueue {
     pub fn import_cell(&mut self, cell: Cell) {
         self.cells.push(cell);
     }
+    pub fn delete_cell(&mut self, identifier: [u8; CELL_IDENTIFIER_LENGTH as usize]) {
+        let mut position_deletd = Vec::new();
+        let mut position = 0;
+        for i in &self.cells {
+            if match i {
+                Cell::Blob(_, j) | Cell::Literal(_, j) | Cell::Link(_, _, j) => *j,
+                Cell::BlobIncomplete(_, j) | Cell::LiteralIncomplete(_, j) => j.identifier,
+            } == identifier
+            {
+                position_deletd.push(position);
+            } else {
+                position += 1;
+            }
+        }
+        for i in position_deletd {
+            self.cells.remove(i);
+        }
+    }
 }

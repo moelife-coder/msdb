@@ -87,10 +87,8 @@ COMMAND [COMMAND ARGUMENTS]
 - `alter CELLNAME CELLTYPE CELLCONTENT`[WIP]
 
     Change cell content / cell type (Only work when you are inside a object)
-- `del CELLNAME CELLTYPE CELLCONTENT`
 
-    Delete cell (Only work when you are inside a object)
-- `del OBJECTNAME / STRUCTNAME`
+- `del CELLNAME / OBJECTNAME / STRUCTNAME`
 
     Delete object / structure. Note that due to preformance issue, cells in object may not be deleted. If you are willing to sacrifice preformance to minify database storage, please use `wipe`.
 - `wipe OBJECTNAME`
