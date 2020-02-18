@@ -579,6 +579,7 @@ pub fn run_commands(
                     );
             }
         }
+        "pwd" => println!("{}", current_location),
         "del" => {
             if let Some(i) = parsed_command.next() {
                 if current_location.current_structure_identifier() == None {

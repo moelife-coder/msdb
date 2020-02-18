@@ -91,7 +91,7 @@ COMMAND [COMMAND ARGUMENTS]
 - `del CELLNAME / OBJECTNAME / STRUCTNAME`
 
     Delete object / structure. Note that due to preformance issue, cells in object may not be deleted. If you are willing to sacrifice preformance to minify database storage, please use `wipe`.
-- `wipe OBJECTNAME`
+- `wipe OBJECTNAME`[WIP]
 
     Delete object and every cell related
 
