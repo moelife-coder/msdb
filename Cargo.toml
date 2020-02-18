@@ -7,7 +7,7 @@ readme = "README.md"
 license = "GPL3"
 keywords = ["database"]
 categories = ["database"]
-authors = ["mass"]
+authors = ["moelife-coder <61054382+moelife-coder@users.noreply.github.com>"]
 edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -17,3 +17,4 @@ rpassword = "4.0.3"
 rand = "0.7.3"
 hex = "0.4.1"
 rustyline = "6.0.0"
+clap = "2.33.0"

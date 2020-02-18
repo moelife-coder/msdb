@@ -1,8 +1,12 @@
 #![feature(test)]
+use clap::{App, Arg};
 use sodiumoxide::crypto::pwhash;
 use sodiumoxide::crypto::secretbox;
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{self, BufRead};
 use std::path;
+use std::path::Path;
 extern crate test;
 mod binary_io;
 mod blockencrypt;
@@ -12,6 +16,47 @@ mod metadata;
 mod utils;
 const VERSION_NUMBER: u8 = 4;
 fn main() {
+    let matches = App::new("Mobile Secure DataBase (msdb)")
+        .version("Version 0.1 (db version code 4)")
+        .author("moelife-coder <61054382+moelife-coder@users.noreply.github.com>")
+        .about("A user-friendly, secure and standalone database")
+        .arg(
+            Arg::with_name("input")
+                .short("i")
+                .long("input")
+                .value_name("FILE")
+                .help("Load MSDB script from a file"),
+        )
+        .get_matches();
+
+    if matches.is_present("input") {
+        from_file(matches.value_of("input").unwrap());
+    } else {
+        main_cli();
+    }
+}
+fn read_lines<P>(filename: P) -> io::Result<io::Lines<io::BufReader<File>>>
+where
+    P: AsRef<Path>,
+{
+    let file = File::open(filename)?;
+    Ok(io::BufReader::new(file).lines())
+}
+
+fn from_file(filename: &str) {
+    //A simple command parser
+    if let Ok(lines) = read_lines(filename) {
+        for line in lines {
+            if let Ok(eachline) = line {
+                let mut parsed_commands = eachline.split_whitespace();
+                if let Some(k) = parsed_commands.next() {
+                    println!("{}", k);
+                }
+            }
+        }
+    }
+}
+fn main_cli() {
     let mut current_location = db_commands::DatabaseLocation::new();
     let mut password: (secretbox::Key, bool) = (secretbox::gen_key(), false);
     let mut main_metadata: metadata::Metadata = metadata::Metadata::create();
