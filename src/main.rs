@@ -17,7 +17,7 @@ mod utils;
 const VERSION_NUMBER: u8 = 4;
 fn main() {
     let matches = App::new("Mobile Secure DataBase (msdb)")
-        .version("Version 0.1 (db version code 4)")
+        .version("Version 0.4 (db version code 4)")
         .author("moelife-coder <61054382+moelife-coder@users.noreply.github.com>")
         .about("A user-friendly, secure and standalone database")
         .arg(
