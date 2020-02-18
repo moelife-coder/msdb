@@ -144,13 +144,7 @@ COMMAND [COMMAND ARGUMENTS]
 - `debls`
     Old version of `ls`
 
-### Commands for scripting
-
-- `output OUTFILE`
-
-    write command result output uinto OUTFILE.
-
-> Special note: if you are using a command script, note that if you leave a optional parameter blank (for example, database password when decrypting), *msdb* will prompt for the parameter.
+> Special note: if you are using a command script, every parameter except `password` for `create` and `decrypt` command is **required**.
 
 ## Support
 

@@ -46,11 +46,65 @@ where
 fn from_file(filename: &str) {
     //A simple command parser
     if let Ok(lines) = read_lines(filename) {
+        let mut current_location = db_commands::DatabaseLocation::new();
+        let mut password: (secretbox::Key, bool) = (secretbox::gen_key(), false);
+        let mut main_metadata: metadata::Metadata = metadata::Metadata::create();
+        let mut structure_cache: HashMap<
+            [u8; blocks::CELL_IDENTIFIER_LENGTH as usize],
+            db_commands::Structure,
+        > = HashMap::new();
+        sodiumoxide::init().expect("Unable to initialize SoldiumMoxide");
         for line in lines {
             if let Ok(eachline) = line {
                 let mut parsed_commands = eachline.split_whitespace();
-                if let Some(k) = parsed_commands.next() {
-                    println!("{}", k);
+                if let Some(i) = parsed_commands.next() {
+                    match i {
+                        "create" => {
+                            let database_name = parsed_commands.next().unwrap();
+                            let database_password = if let Some(j) = parsed_commands.next() {
+                                j.to_string()
+                            } else {
+                                rpassword::prompt_password_stdout("Password: ")
+                                    .expect("Unable to read password using rpassword")
+                            };
+                            utils::new_database(&database_name, &database_password, VERSION_NUMBER);
+                        }
+                        "decrypt" => {
+                            let database_name = parsed_commands.next().unwrap();
+                            let try_passwd = {
+                                let database_password = if let Some(j) = parsed_commands.next() {
+                                    j.to_string()
+                                } else {
+                                    rpassword::prompt_password_stdout("Password: ")
+                                        .expect("Unable to read password using rpassword")
+                                };
+                                let salt = {
+                                    let salt_directory = format!("{}/salt", database_name);
+                                    let salt_vec = binary_io::read_all(&salt_directory);
+                                    pwhash::Salt::from_slice(&salt_vec[..]).unwrap()
+                                };
+                                blockencrypt::password_deriv(&database_password, salt)
+                            };
+                            main_metadata =
+                                utils::select_database(&database_name, &try_passwd, VERSION_NUMBER);
+                            current_location.select_root(database_name.to_string());
+                            password = (try_passwd, true);
+                        }
+                        "exit" => utils::exit(),
+                        _ => {
+                            if password.1 {
+                                db_commands::run_commands(
+                                    &eachline,
+                                    &mut main_metadata,
+                                    &mut current_location,
+                                    &password.0,
+                                    &mut structure_cache,
+                                );
+                            } else {
+                                panic!("Database unavailable");
+                            }
+                        }
+                    }
                 }
             }
         }
