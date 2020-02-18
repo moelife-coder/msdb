@@ -143,6 +143,9 @@ COMMAND [COMMAND ARGUMENTS]
 
     View metadata properties
 
+- `debls`
+    Old version of ls
+
 ### Commands for scripting
 
 - `output OUTFILE`

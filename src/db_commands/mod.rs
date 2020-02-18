@@ -216,7 +216,7 @@ pub fn run_commands(
                         }
                     },
                     j => match current_location.current_structure_identifier() {
-                        None => println!("You cannot create a object under root."),
+                        None => println!("You cannot create a object under root.\nPlease select/create a structure before creating object."),
                         Some(_) => {
                             if current_location.current_object_identifier().is_none() {
                                 if {
@@ -243,13 +243,13 @@ pub fn run_commands(
                                     }
                                     object_exist
                                 } {
-                                    println!("Object already exists.");
+                                    println!("Object already exists. Please try another name.");
                                 } else {
                                     //Create a new object
                                     create_object(j, current_location, structure_cache);
                                 };
                             } else if j == "list" {
-                                println!("You cannot create a cell using field name `list`");
+                                println!("You cannot create a cell with reserved name `list`. Please try another name.");
                             } else {
                                 //Create a new cell
                                 let cell_type = {
@@ -259,12 +259,12 @@ pub fn run_commands(
                                             //TODO: Support Incomplete Block
                                             "literal" | "blob" | "link" | "revlink" => k,
                                             _ => {
-                                                println!("Warning: cell type not reconized. Treated as Literal Cell.");
+                                                println!("Cell type not reconized. Treated as Literal Cell.");
                                                 "literal".to_string()
                                             }
                                         }
                                     } else {
-                                        println!("Warning: creating a cell with no type is discouraged. Treated as Literal Cell.");
+                                        println!("Creating a cell with no type is discouraged. Treated as Literal Cell.");
                                         "literal".to_string()
                                     }
                                 };
@@ -272,7 +272,7 @@ pub fn run_commands(
                                     if let Some(k) = parsed_command.next() {
                                         k
                                     } else {
-                                        println!("Warning: creating a cell with no content is discouraged.");
+                                        println!("Creating a cell with no content is discouraged.");
                                         "0"
                                     }
                                 };
@@ -296,7 +296,16 @@ pub fn run_commands(
             } else if current_location.current_object_identifier() == None {
                 ugly_print_objects(current_location, structure_cache);
             } else {
-                ugly_print_cell(current_location, structure_cache);
+                ugly_print_cell(current_location, structure_cache, main_metadata);
+            }
+        }
+        "debls" => {
+            if current_location.current_structure_identifier() == None {
+                debug_print_structure(main_metadata);
+            } else if current_location.current_object_identifier() == None {
+                debug_print_objects(current_location, structure_cache);
+            } else {
+                debug_print_cell(current_location, structure_cache);
             }
         }
         "leave" => leave(current_location),
@@ -334,7 +343,7 @@ pub fn run_commands(
         }
         "sync" => {
             if main_metadata.has_modified() {
-                println!("Writing main metadata");
+                println!("Writing main metadata to disk...");
                 {
                     let main_metadata_vec = main_metadata.to_vec();
                     let data = blockencrypt::encrypt_block(&main_metadata_vec, password);
@@ -343,12 +352,12 @@ pub fn run_commands(
                 }
                 main_metadata.set_not_modified();
             } else {
-                println!("Main metadata not modified.");
+                println!("Main metadata not modified; ignoring.");
             }
             for i in structure_cache {
-                println!("Writing {}", into_hex_metadata(*i.0));
+                println!("Writing {} structure to disk...", into_hex_metadata(*i.0));
                 {
-                    println!(" Cell List");
+                    println!("|-Cell list");
                     //TODO: custom cell size
                     i.1.list.cell_to_raw(None, 512);
                     for j in &i.1.list.queue {
@@ -363,7 +372,7 @@ pub fn run_commands(
                     }
                 }
                 {
-                    println!(" Cache");
+                    println!("|-Field Cache");
                     //TODO: custom cell size
                     for j in &mut i.1.cached_block {
                         let folder_name = format!(
@@ -385,7 +394,7 @@ pub fn run_commands(
                 }
                 {
                     if i.1.metadata.has_modified() {
-                        println!(" Metadata");
+                        println!("|-Structure Metadata");
                         //Save metadata
                         let metadata_sync_vec = i.1.metadata.to_vec();
                         let data = blockencrypt::encrypt_block(&metadata_sync_vec, password);
@@ -397,7 +406,7 @@ pub fn run_commands(
                         binary_io::write_with_nonce(&filename, &data.0, data.1);
                         i.1.metadata.set_not_modified();
                     } else {
-                        println!(" Metadata(Ignored)")
+                        println!("|-Metadata(Ignored)")
                     }
                 }
             }
@@ -655,7 +664,7 @@ pub fn create_structure(
         binary_io::write_with_nonce(&filename, &data.0, data.1);
     }
     println!(
-        "New structure {}[{}]",
+        "Structure {}[identifier {}] created.",
         structure_name,
         into_hex_metadata(structure_token)
     );
@@ -701,7 +710,7 @@ fn create_object(
             object_identifier,
         ));
     println!(
-        "New object {}[{}]",
+        "Object {}[identifier: {}] created.",
         object_name,
         into_hex_block(object_identifier)
     );
@@ -773,7 +782,7 @@ fn create_field(
         binary_io::write_with_nonce(&filename, &data.0, data.1);
     }
     println!(
-        "New field {}[{}]",
+        "Field {}[identifier: {}] created.",
         field_name,
         into_hex_metadata(field_identifier)
     );
@@ -842,7 +851,7 @@ fn select_structure(
             from_hex_metadata(structure_token),
             structure_name.to_string(),
         ));
-        println!("Selected structure {}[{}]", structure_name, structure_token);
+        println!("Structure {}[{}]", structure_name, structure_token);
     } else {
         println!(
             "Unable to select structure {}: No such structure",
@@ -956,7 +965,6 @@ fn create_cell(
         .sub_data()
         .get(field_name)
     {
-        println!("Using existing field {}[{}]", field_name, k);
         let result = k;
         result.to_string()
     } else {
@@ -1001,8 +1009,8 @@ fn leave(current_location: &mut DatabaseLocation) {
         }
     }
 }
-/// Ugly version of printing structures inside main metadata
-fn ugly_print_structure(main_metadata: &metadata::Metadata) {
+/// Debug version of printing structures inside main metadata
+fn debug_print_structure(main_metadata: &metadata::Metadata) {
     println!("[Config]");
     for (i, j) in main_metadata.attribute() {
         println!("{} = {}", i, j);
@@ -1012,8 +1020,15 @@ fn ugly_print_structure(main_metadata: &metadata::Metadata) {
         println!("{} -> {}", i, j);
     }
 }
-///Ugly version of printing objects inside structure
-fn ugly_print_objects(
+/// Ugly version of printing structures inside main metadata
+fn ugly_print_structure(main_metadata: &metadata::Metadata) {
+    println!("[Structure]");
+    for (i, _) in main_metadata.sub_data() {
+        println!("{}", i);
+    }
+}
+///Debug version of printing objects inside structure
+fn debug_print_objects(
     current_location: &DatabaseLocation,
     structure_cache: &HashMap<[u8; 8], Structure>,
 ) {
@@ -1038,8 +1053,183 @@ fn ugly_print_objects(
         );
     }
 }
+///Ugly version of printing objects inside structure
+fn ugly_print_objects(
+    current_location: &DatabaseLocation,
+    structure_cache: &HashMap<[u8; 8], Structure>,
+) {
+    for i in &structure_cache
+        .get(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .list
+        .cells
+    {
+        println!(
+            "{}",
+            if let blocks::Cell::Literal(j, _) = i {
+                j
+            } else {
+                "null"
+            }
+        );
+    }
+}
 /// Ugly version of printing cells inside current object
 fn ugly_print_cell(
+    current_location: &DatabaseLocation,
+    structure_cache: &HashMap<[u8; 8], Structure>,
+    main_metadata: &metadata::Metadata,
+) {
+    let current_object = current_location.current_object_identifier().unwrap();
+    for (i, j) in &structure_cache
+        .get(&current_location.current_structure_identifier().unwrap())
+        .unwrap()
+        .cached_block
+    {
+        let current_field = format!("{}", {
+            let mut result: &str = "";
+            for k in structure_cache
+                .get(&current_location.current_structure_identifier().unwrap())
+                .unwrap()
+                .metadata
+                .sub_data()
+            {
+                if k.1 == &into_hex_metadata(*i) {
+                    result = k.0;
+                }
+            }
+            result
+        });
+        for k in &j.cells {
+            //Get current field name and identifier
+            if match k {
+                blocks::Cell::Literal(_, l)
+                | blocks::Cell::Blob(_, l)
+                | blocks::Cell::Link(_, _, l) => *l,
+                blocks::Cell::LiteralIncomplete(_, l) | blocks::Cell::BlobIncomplete(_, l) => {
+                    l.identifier
+                }
+            } == current_object
+            {
+                println!(
+                    "{}",
+                    match k {
+                        blocks::Cell::Literal(m, _) => format!("{} : \"{}\"", current_field, m),
+                        blocks::Cell::Blob(m, _) =>
+                            format!("{}: {}", current_field, hex::encode(m)),
+                        blocks::Cell::Link(m, n, _) => {
+                            format!(
+                                "{}: {} Link to {}",
+                                current_field,
+                                match m {
+                                    blocks::LinkType::Forward => "Forward",
+                                    blocks::LinkType::Reverse => "Reverse",
+                                },
+                                match n {
+                                    blocks::LinkTarget::SameBlock(o) => {
+                                        let mut result_cell_name = String::new();
+                                        for p in &structure_cache
+                                            .get(
+                                                &current_location
+                                                    .current_structure_identifier()
+                                                    .unwrap(),
+                                            )
+                                            .unwrap()
+                                            .list
+                                            .cells
+                                        {
+                                            if let blocks::Cell::Literal(r, q) = p {
+                                                if q == o {
+                                                    result_cell_name = r.to_string();
+                                                }
+                                            }
+                                        }
+                                        format!("{}'s same cell", result_cell_name)
+                                    }
+                                    blocks::LinkTarget::AnotherField(o, p) => {
+                                        let mut result_cell_name = String::new();
+                                        for q in &structure_cache
+                                            .get(
+                                                &current_location
+                                                    .current_structure_identifier()
+                                                    .unwrap(),
+                                            )
+                                            .unwrap()
+                                            .list
+                                            .cells
+                                        {
+                                            if let blocks::Cell::Literal(s, r) = q {
+                                                if r == p {
+                                                    result_cell_name = s.to_string();
+                                                }
+                                            }
+                                        }
+                                        let result_field_name = &structure_cache
+                                            .get(
+                                                &current_location
+                                                    .current_structure_identifier()
+                                                    .unwrap(),
+                                            )
+                                            .unwrap()
+                                            .metadata
+                                            .sub_data()
+                                            .get(&into_hex_metadata(*o))
+                                            .unwrap();
+                                        format!("{}'s {}", result_cell_name, result_field_name)
+                                    }
+                                    blocks::LinkTarget::AnotherStruct(o, p, q) => {
+                                        let mut result_cell_name = String::new();
+                                        for r in &structure_cache
+                                            .get(
+                                                &current_location
+                                                    .current_structure_identifier()
+                                                    .unwrap(),
+                                            )
+                                            .unwrap()
+                                            .list
+                                            .cells
+                                        {
+                                            if let blocks::Cell::Literal(t, s) = r {
+                                                if s == q {
+                                                    result_cell_name = t.to_string();
+                                                }
+                                            }
+                                        }
+                                        let result_field_name = &structure_cache
+                                            .get(
+                                                &current_location
+                                                    .current_structure_identifier()
+                                                    .unwrap(),
+                                            )
+                                            .unwrap()
+                                            .metadata
+                                            .sub_data()
+                                            .get(&into_hex_metadata(*p))
+                                            .unwrap();
+                                        let result_struct_name = &main_metadata
+                                            .sub_data()
+                                            .get(&into_hex_metadata(*o))
+                                            .unwrap();
+                                        format!(
+                                            "{}/{}'s {}",
+                                            result_struct_name, result_cell_name, result_field_name
+                                        )
+                                    }
+                                }
+                            )
+                        }
+                        blocks::Cell::BlobIncomplete(m, _) =>
+                            format!("{}: [BlobIncomplete] {}", current_field, hex::encode(m)),
+                        blocks::Cell::LiteralIncomplete(m, _) =>
+                            format!("{}: [LiteralIncomplete] {}", current_field, hex::encode(m)),
+                    }
+                )
+            }
+        }
+    }
+}
+/// Debug version of printing cells inside current object
+fn debug_print_cell(
     current_location: &DatabaseLocation,
     structure_cache: &HashMap<[u8; 8], Structure>,
 ) {
