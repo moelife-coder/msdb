@@ -1,5 +1,6 @@
 # MSDB - Mobile Secure DataBase
 msdb is a user-friendly, intuitive and standalone database.
+[![asciicast](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG.svg)](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG)
 ## Getting started
 ### Prerequisites
 - `rustc` installed(building). Nightly channel is recomended, while stable channel should also work.
