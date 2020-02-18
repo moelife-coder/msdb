@@ -20,7 +20,7 @@ jobs:
             cargo build --release
       - run:
           name: Test
-          command: rustup run stable cargo test
+          command: cargo test
       - store_artifacts:
           name: releasing artifacts
           path: target/release/msdb
