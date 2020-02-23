@@ -219,7 +219,7 @@ pub fn run_commands(
                         None => println!("You cannot create a object under root.\nPlease select/create a structure before creating object."),
                         Some(_) => {
                             if current_location.current_object_identifier().is_none() {
-                                if {
+                                let exist = {
                                     //Check if the object exist
                                     let cells = &structure_cache
                                         .get(
@@ -242,7 +242,8 @@ pub fn run_commands(
                                         }
                                     }
                                     object_exist
-                                } {
+                                };
+                                if exist {
                                     println!("Object already exists. Please try another name.");
                                 } else {
                                     //Create a new object
@@ -1194,7 +1195,7 @@ fn debug_print_structure(main_metadata: &metadata::Metadata) {
 /// Ugly version of printing structures inside main metadata
 fn ugly_print_structure(main_metadata: &metadata::Metadata) {
     println!("[Structure]");
-    for (i, _) in main_metadata.sub_data() {
+    for i in main_metadata.sub_data().keys() {
         println!("{}", i);
     }
 }
@@ -1257,7 +1258,7 @@ fn ugly_print_cell(
         .unwrap()
         .cached_block
     {
-        let current_field = format!("{}", {
+        let current_field = {
             let mut result: &str = "";
             for k in structure_cache
                 .get(&current_location.current_structure_identifier().unwrap())
@@ -1270,7 +1271,7 @@ fn ugly_print_cell(
                 }
             }
             result
-        });
+        };
         for k in &j.cells {
             //Get current field name and identifier
             if match k {
