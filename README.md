@@ -5,11 +5,11 @@
 msdb is a user-friendly, intuitive and standalone database.
 [![asciicast](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG.svg)](https://asciinema.org/a/Fo3oAjaENzYZfuQfMC3RxiSPG)
 
-## Features
+## Current & Planning Features
 
 - No installation required / database stored in folder
 
-- State-of-the-art encryption
+- State-of-the-art encryption ([NaCl Bindings](https://nacl.cr.yp.to/valid.html))
 
 - Relatively high performance
 
@@ -18,6 +18,8 @@ msdb is a user-friendly, intuitive and standalone database.
 - Dynamic field (you can store different type of content in one field)
 
 - User-friendly
+
+- Json-RPC support (TODO)
 
 ## Getting started
 
@@ -159,6 +161,15 @@ COMMAND [COMMAND ARGUMENTS]
     Old version of `ls`
 
 > Special note: if you are using a command script, every parameter except `password` for `create` and `decrypt` command is **required**.
+
+## RoadMap
+
+- 2020/3: Release Version 0.9, including:
+    - Stability improvements
+    - Performance improvements
+    - More developer-friendly (Possibly Json-RPC)
+- Future plan
+    - Better command line
 
 ## Contributors
 
